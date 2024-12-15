@@ -1,6 +1,6 @@
 # Dataset of Telegram News Posts
 
-For the Russian version of this dataset description, you can access it [here](/README_ru.md).
+For the Russian version of this dataset description, you can access it [here](README_ru.md).
 
 ## Description
 
@@ -121,7 +121,7 @@ README.md                      # This file
 
 ## License
 
-The dataset is distributed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](/LICENCE).
+The dataset is distributed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENCE).
 
 ## Contact
 
