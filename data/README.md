@@ -10,7 +10,18 @@ The classification was performed automatically using the **Qwen 2.5** model.
 
 ## Data Structure
 
-1. **Folder with JSON files**: Each file in the folder contains messages from one channel. The file name corresponds to the channel's ID, and its contents are in JSON format, with each object representing an individual post. Example file name: `{channel_id}_messages.json`.
+1. **Folder with JSON files**: Each file in the folder contains messages from one channel. The file name corresponds to the channel's ID, and its contents are in JSON format, with each object representing an individual post. Example file name: `{channel_id}_messages.json`. The structure of each message is as follows:
+
+```json
+{
+    "message_id": 11655,
+    "sender_id": -1001000724666,
+    "text": "Post text",
+    "date": "2024-11-07T18:09:50+00:00",
+    "channel": "Channel name",
+    "category": "category"
+}
+```
 
 2. **CSV File**: All data from the JSON files are combined into a single CSV file, which includes information about each post, including the channel ID, post text, publication date, and category. The file name is `all_channel_posts.csv`.
 
@@ -22,6 +33,7 @@ message_id,sender_id,text,date,channel,category
 ```
 
 Where:
+
 - **message_id**: Unique identifier for the message.
 - **sender_id**: Identifier of the channel or user that sent the message.
 - **text**: Post text.
@@ -45,22 +57,6 @@ Each post was classified into one of the following categories:
 - **weather**: Weather-related news: forecasts, disasters.
 - **it**: News about IT and technology: software, hardware, devices, programming languages, machine learning.
 - **advertisement**: Advertising texts about goods, services, promotions.
-
-## File Formats
-
-1. **JSON files (for each channel)**: Each file is named in the format `{channel_id}_messages.json` and contains a list of messages. The structure of each message is as follows:
-```json
-{
-    "message_id": 11655,
-    "sender_id": -1001000724666,
-    "text": "Post text",
-    "date": "2024-11-07T18:09:50+00:00",
-    "channel": "Channel name",
-    "category": "category"
-}
-```
-
-2. **CSV file**: All the data gathered from JSON files is presented in a single CSV file `all_channel_posts.csv`.
 
 ## Data Sources
 
@@ -96,6 +92,7 @@ These channels contain diverse content, covering various topics such as news, te
 ## Potential Data Inaccuracies
 
 The data was annotated automatically using the **Qwen 2.5** model, and may contain inaccuracies:
+
 - **Incorrect classification**: Some messages may have been assigned to the wrong category, especially if the topic is ambiguous.
 - **Errors in text interpretation**: Unusual expressions or slang may have been misclassified.
 - **Contextual errors**: The model may not account for the full context of a post.
@@ -105,6 +102,7 @@ It is recommended to use this dataset while keeping these potential classificati
 ## Applications
 
 This dataset can be used for various tasks such as:
+
 - Text classification.
 - Trend analysis of news.
 - Research in media content and social networks.
@@ -112,7 +110,7 @@ This dataset can be used for various tasks such as:
 
 ## Directory Structure
 
-```
+```filesystem
 /raw
     /{channel_id}_messages.json  # Files with data for each channel
 all_channel_posts.csv           # Consolidated CSV file with all the data
@@ -126,4 +124,5 @@ The dataset is distributed under the [Creative Commons Attribution 4.0 Internati
 ## Contact
 
 If you have any questions, please contact:
-- **Telegram**: [@NKTKLN](https://t.me/NKTKLN)
+
+**Telegram**: [@NKTKLN](https://t.me/NKTKLN)
