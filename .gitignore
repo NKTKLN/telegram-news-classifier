@@ -39,6 +39,7 @@ config/
 # Directories for model training results
 checkpoints/
 output/
+model/
 
 # OS-specific files
 .DS_Store
@@ -46,9 +47,6 @@ Thumbs.db
 
 # Keep raw data files
 !data/raw/*json
-
-# Keep model data files
-!model/*
 
 # Tmp files
 tmp/
