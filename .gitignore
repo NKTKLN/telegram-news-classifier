@@ -39,7 +39,7 @@ config/
 # Directories for model training results
 checkpoints/
 output/
-model/best_model/
+model/
 
 # OS-specific files
 .DS_Store
