@@ -117,7 +117,7 @@ README.md                      # Этот файл
 
 ## Лицензия
 
-Датасет распространяется под лицензией [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENCE).
+Датасет распространяется под лицензией [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENCE.md).
 
 ## Контакты
 
