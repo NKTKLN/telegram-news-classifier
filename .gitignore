@@ -48,6 +48,9 @@ Thumbs.db
 # Keep raw data files
 !data/raw/*json
 
+# Keep configuration example files
+!example*.*
+
 # Tmp files
 tmp/
 Todo.md
