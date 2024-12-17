@@ -2,13 +2,13 @@
 
 For the Russian version of this dataset description, you can access it [here](README_ru.md).
 
-## Description
+## 🗒 Description
 
 This dataset contains messages collected from various **Russian** news Telegram channels. It includes two types of files: a separate JSON file for each channel and a consolidated CSV file with all the data. All messages are classified into categories, making the dataset suitable for text classification tasks.
 
 The classification was performed automatically using the **Qwen 2.5** model.
 
-## Data Structure
+## 📝 Data Structure
 
 1. **Folder with JSON files**: Each file in the folder contains messages from one channel. The file name corresponds to the channel's ID, and its contents are in JSON format, with each object representing an individual post. Example file name: `{channel_id}_messages.json`. The structure of each message is as follows:
 
@@ -41,7 +41,7 @@ Where:
 - **channel**: Channel name.
 - **category**: Post category, one of: `"other"`, `"business"`, `"finances"`, `"political"`, `"personal"`, `"stuff"`, `"gaming"`, `"science"`, `"moscow"`, `"weather"`, `"it"`, `"advertisement"`.
 
-## Categories
+## 📚 Categories
 
 Each post was classified into one of the following categories:
 
@@ -58,7 +58,7 @@ Each post was classified into one of the following categories:
 - **it**: News about IT and technology: software, hardware, devices, programming languages, machine learning.
 - **advertisement**: Advertising texts about goods, services, promotions.
 
-## Data Sources
+## 🔍 Data Sources
 
 The data for this dataset was collected from various **Russian** news Telegram channels. All channels provide public access to their content, except for some that have age restrictions or private links. Below are the links to the channels used (some channels may have age restrictions):
 
@@ -89,7 +89,7 @@ The data for this dataset was collected from various **Russian** news Telegram c
 
 These channels contain diverse content, covering various topics such as news, technology, economics, and more, with age restrictions for some of them.
 
-## Potential Data Inaccuracies
+## 🚫 Potential Data Inaccuracies
 
 The data was annotated automatically using the **Qwen 2.5** model, and may contain inaccuracies:
 
@@ -99,7 +99,7 @@ The data was annotated automatically using the **Qwen 2.5** model, and may conta
 
 It is recommended to use this dataset while keeping these potential classification errors in mind.
 
-## Applications
+## 🤔 Applications
 
 This dataset can be used for various tasks such as:
 
@@ -108,7 +108,7 @@ This dataset can be used for various tasks such as:
 - Research in media content and social networks.
 - Training machine learning models for news data analysis.
 
-## Directory Structure
+## 🗃 Directory Structure
 
 ```filesystem
 /raw
@@ -117,11 +117,11 @@ all_channel_posts.csv           # Consolidated CSV file with all the data
 README.md                      # This file
 ```
 
-## License
+## 📃 License
 
 The dataset is distributed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENCE.md).
 
-## Contact
+## 📞 Contact
 
 If you have any questions, please contact:
 
