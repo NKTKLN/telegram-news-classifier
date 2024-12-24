@@ -55,17 +55,3 @@ class TextClassifier:
             outputs = self.model(**inputs)
             logits = outputs.logits
             return torch.argmax(logits, dim=1).item()
-
-    @staticmethod
-    def postprocess_output(output: int) -> str:
-        """
-        Converts the predicted class index to a label.
-
-        Args:
-            output (int): The predicted class index.
-
-        Returns:
-            str: The predicted class label.
-        """
-        unique_labels = ['business', 'it', 'personal', 'other', 'weather', 'gaming', 'finances', 'stuff', 'political', 'advertisement', 'science', 'moscow']
-        return unique_labels[output] if 0 <= output < len(unique_labels) else None
