@@ -1,65 +1,109 @@
 import yaml
+from typing import Dict, List, Optional
 
 class Config:
-    def __init__(self, config_path: str):
-        self.config_path = config_path
-        self._load_config()
+    """
+    Class to work with a YAML configuration file.
+    Handles data for Telegram channels, topics, and database settings.
+    """
     
-    def _load_config(self):
+    def __init__(self, config_path: str):
+        """
+        Initializes the configuration with the given path to the config file.
+
+        :param config_path: Path to the configuration file
+        """
+        self.config_path = config_path
+        self._config = self._load_config()
+
+    def _load_config(self) -> Dict:
+        """
+        Loads the configuration file into memory.
+
+        :return: A dictionary representing the configuration
+        """
         with open(self.config_path, 'r', encoding='utf-8') as file:
-            self._config = yaml.safe_load(file)
+            return yaml.safe_load(file) or {}
+
+    def _save_config(self) -> None:
+        """
+        Saves the current configuration to the file.
+        """
+        with open(self.config_path, 'w', encoding='utf-8') as file:
+            yaml.safe_dump(self._config, file, default_flow_style=False, allow_unicode=True)
+
+    def _ensure_key(self, *keys: str) -> None:
+        """
+        Ensures that the given nested keys exist in the configuration.
+        If the keys are missing, empty dictionaries or lists are created.
+
+        :param keys: A sequence of keys for the nested structure
+        """
+        d = self._config
+        for key in keys:
+            if key not in d:
+                d[key] = {} if key != 'channels' and key != 'topics' else []
+            d = d[key]
 
     @property
-    def telegram(self):
+    def telegram(self) -> Dict:
+        """Returns the Telegram configuration."""
         return self._config.get('telegram', {})
-    
+
     @property
-    def sqlite(self):
+    def sqlite(self) -> Dict:
+        """Returns the SQLite configuration."""
         return self._config.get('sqlite', {})
-    
+
     @property
-    def bot_settings(self):
+    def bot_settings(self) -> Dict:
+        """Returns the bot settings."""
         return self._config.get('bot_settings', {})
-    
+
     @property
-    def categories(self):
+    def categories(self) -> Dict:
+        """Returns the categories."""
         return self._config.get('categories', {})
-    
+
     @property
-    def exclude_categories(self):
+    def exclude_categories(self) -> List:
+        """Returns the excluded categories."""
         return self._config.get('exclude_categories', [])
 
-    def get_telegram_topic(self):
+    def get_telegram_topics(self) -> List[Dict]:
+        """Returns the list of Telegram topics."""
         return self.telegram.get('topics', [])
-    
-    def get_telegram_channels(self):
+
+    def get_telegram_channels(self) -> List[Dict]:
+        """Returns the list of Telegram channels."""
         return self.telegram.get('channels', [])
 
-    def add_telegram_channel(self, channel_id: int, name: str = ""):
-        if 'telegram' not in self._config:
-            self._config['telegram'] = {}
-        if 'channels' not in self._config['telegram']:
-            self._config['telegram']['channels'] = []
+    def add_telegram_channel(self, channel_id: int, name: str = "") -> None:
+        """
+        Adds a new channel to the Telegram configuration if it doesn't already exist.
+
+        :param channel_id: The ID of the channel
+        :param name: The name of the channel (default is an empty string)
+        """
+        self._ensure_key('telegram', 'channels')
         
+        # Check if the channel already exists
         existing_channels = self.get_telegram_channels()
         if not any(channel['id'] == channel_id for channel in existing_channels):
             self._config['telegram']['channels'].append({'id': channel_id, 'name': name})
             self._save_config()
-            self._load_config()
 
-    def add_telegram_topic(self,  topic_id: int, topic_topic_id: int):
-        if 'telegram' not in self._config:
-            self._config['telegram'] = {}
-        if 'topics' not in self._config['telegram']:
-            self._config['telegram']['topics'] = []
+    def add_telegram_topic(self, topic_id: int, topic_topic_id: int) -> None:
+        """
+        Adds a new topic to the Telegram configuration if it doesn't already exist.
+
+        :param topic_id: The ID of the topic
+        :param topic_topic_id: The ID of the subtopic
+        """
+        self._ensure_key('telegram', 'topics')
         
+        # Check if the topic already exists
         existing_topics = self.get_telegram_topics()
         if not any(topic['id'] == topic_id for topic in existing_topics):
             self._config['telegram']['topics'].append({'id': topic_id, 'topic_id': topic_topic_id})
             self._save_config()
-            self._load_config()
-
-    def _save_config(self):
-        """Сохраняет текущую конфигурацию в файл."""
-        with open(self.config_path, 'w', encoding='utf-8') as file:
-            yaml.safe_dump(self._config, file, default_flow_style=False, allow_unicode=True)
