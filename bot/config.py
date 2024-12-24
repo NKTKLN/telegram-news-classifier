@@ -6,7 +6,8 @@ class Config:
         """
         Initializes the configuration with the given path to the config file.
 
-        :param config_path: Path to the configuration file
+        Args:
+            config_path (str): Path to the configuration file
         """
         self.config_path = config_path
         self._config = self._load_config()
@@ -15,7 +16,8 @@ class Config:
         """
         Loads the configuration file into memory.
 
-        :return: A dictionary representing the configuration
+        Returns:
+            Dict: A dictionary representing the configuration
         """
         with open(self.config_path, 'r', encoding='utf-8') as file:
             return yaml.safe_load(file) or {}
@@ -32,7 +34,8 @@ class Config:
         Ensures that the given nested keys exist in the configuration.
         If the keys are missing, empty dictionaries or lists are created.
 
-        :param keys: A sequence of keys for the nested structure
+        Args:
+            keys (str): A sequence of keys for the nested structure
         """
         d = self._config
         for key in keys:
@@ -77,8 +80,9 @@ class Config:
         """
         Adds a new topic to the Telegram configuration if it doesn't already exist.
 
-        :param topic_id: The ID of the topic
-        :param topic_topic_id: The ID of the subtopic
+        Args:
+            topic_id (int): The ID of the topic
+            topic_topic_id (int): The ID of the subtopic
         """
         self._ensure_key('telegram', 'topics')
         
