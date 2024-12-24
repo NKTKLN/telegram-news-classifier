@@ -2,11 +2,6 @@ import yaml
 from typing import Dict, List
 
 class Config:
-    """
-    Class to work with a YAML configuration file.
-    Handles data for Telegram channels, topics, and database settings.
-    """
-    
     def __init__(self, config_path: str):
         """
         Initializes the configuration with the given path to the config file.
@@ -39,10 +34,11 @@ class Config:
 
         :param keys: A sequence of keys for the nested structure
         """
+        d = self._config
         for key in keys:
-            if key not in self._config:
-                self._config[key] = {} if key != 'channels' and key != 'topics' else []
-            self._config = self._config[key]
+            if key not in d:
+                d[key] = {} if key != 'channels' and key != 'topics' else []
+            d = d[key]
 
     @property
     def telegram(self) -> Dict:
@@ -77,21 +73,6 @@ class Config:
         """Returns the list of Telegram channels."""
         return self.telegram.get('channels', [])
 
-    def add_telegram_channel(self, channel_id: int, name: str = "") -> None:
-        """
-        Adds a new channel to the Telegram configuration if it doesn't already exist.
-
-        :param channel_id: The ID of the channel
-        :param name: The name of the channel (default is an empty string)
-        """
-        self._ensure_key('telegram', 'channels')
-        
-        # Check if the channel already exists
-        existing_channels = self.get_telegram_channels()
-        if not any(channel['id'] == channel_id for channel in existing_channels):
-            self._config['telegram']['channels'].append({'id': channel_id, 'name': name})
-            self._save_config()
-
     def add_telegram_topic(self, topic_id: int, topic_topic_id: int) -> None:
         """
         Adds a new topic to the Telegram configuration if it doesn't already exist.
@@ -106,3 +87,4 @@ class Config:
         if not any(topic['id'] == topic_id for topic in existing_topics):
             self._config['telegram']['topics'].append({'id': topic_id, 'topic_id': topic_topic_id})
             self._save_config()
+            self._load_config()
