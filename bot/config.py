@@ -1,5 +1,5 @@
 import yaml
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 class Config:
     """
@@ -39,11 +39,10 @@ class Config:
 
         :param keys: A sequence of keys for the nested structure
         """
-        d = self._config
         for key in keys:
-            if key not in d:
-                d[key] = {} if key != 'channels' and key != 'topics' else []
-            d = d[key]
+            if key not in self._config:
+                self._config[key] = {} if key != 'channels' and key != 'topics' else []
+            self._config = self._config[key]
 
     @property
     def telegram(self) -> Dict:
