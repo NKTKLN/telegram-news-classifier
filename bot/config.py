@@ -4,10 +4,6 @@ from typing import Dict, List
 
 
 class ConfigWorker:
-    """
-    Base class for managing configuration files.
-    Provides methods for loading and saving YAML configuration files.
-    """
     def __init__(self, config_path: str, create_empty: bool = False):
         """
         Initialize the ConfigWorker.
@@ -47,10 +43,6 @@ class ConfigWorker:
 
 
 class MainConfig(ConfigWorker):
-    """
-    Specialized configuration class for managing main application settings.
-    Provides properties for specific configuration sections.
-    """
     @property
     def telegram(self) -> Dict:
         """
@@ -98,10 +90,6 @@ class MainConfig(ConfigWorker):
 
 
 class TelegramConfig(ConfigWorker):
-    """
-    Specialized configuration class for managing Telegram-specific settings.
-    Provides methods to manage topics and forum IDs.
-    """
     def _ensure_key(self) -> None:
         """
         Ensure that the 'topics' key exists in the configuration.
