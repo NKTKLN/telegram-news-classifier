@@ -17,9 +17,9 @@ class TextClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Load the model and tokenizer
-        self.model, self.tokenizer = self.load_model(model_path)
+        self.model, self.tokenizer = self._load_model(model_path)
 
-    def load_model(self, model_path: str) -> Tuple[BertForSequenceClassification, AutoTokenizer]:
+    def _load_model(self, model_path: str) -> Tuple[BertForSequenceClassification, AutoTokenizer]:
         """
         Loads the saved model and tokenizer from the specified path.
 
