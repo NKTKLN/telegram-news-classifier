@@ -115,5 +115,3 @@ class TelegramBot:
 
         # Create new topics if they don't exist
         await self.create_new_topics(config.categories)
-
-bot = TelegramBot()
