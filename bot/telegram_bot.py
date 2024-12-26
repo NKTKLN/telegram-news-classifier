@@ -79,20 +79,21 @@ class TelegramBot:
                     reply_to=topic_id
                 )
 
-    async def create_forum(self, forum_name: str, forum_about: str = "") -> int:
+    async def create_forum(self, forum_name: str, forum_about: str = "") -> None:
         """
         Creates a new forum channel on Telegram and returns the forum ID.
 
         :param forum_name: The name of the forum.
         :param forum_about: A description of the forum.
-        :returns: The forum ID.
+        :returns: None
         """
         forum = await self.client(CreateChannelRequest(
             title=forum_name,
             about=forum_about,
             forum=True
         ))
-        return forum.updates[1].channel_id
+        forum_id = forum.updates[1].channel_id
+        telegram_config.add_forum_id(forum_id)
 
     async def create_topic(self, topic_name: str, category: int) -> None:
         """
@@ -140,8 +141,7 @@ class TelegramBot:
         """
         # Create forum if it doesn't exist
         if telegram_config.forum_id is None:
-            forum_id = await self.create_forum("News")
-            telegram_config.add_forum_id(forum_id)
+            await self.create_forum("News")
 
         # Create topics if they don't exist
         if not telegram_config.topics:
