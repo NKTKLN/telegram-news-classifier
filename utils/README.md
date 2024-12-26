@@ -120,9 +120,3 @@ Each JSON file will have the following format:
 ## 📃 License
 
 This project is licensed under the MIT License, see [LICENSE.md](/LICENSE.md) for full text.
-
-## 📞 Contact
-
-If you have any questions, please contact:
-
-**Telegram**: [@NKTKLN](https://t.me/NKTKLN)
