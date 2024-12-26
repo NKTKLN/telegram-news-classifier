@@ -1,57 +1,70 @@
 import os
-import torch
 from typing import Tuple
+
+import torch
 from transformers import BertForSequenceClassification, AutoTokenizer
 from bot.preprocess import preprocess_text
+
 
 class TextClassifier:
     def __init__(self, model_path: str):
         """
-        Initializes the class by loading the model and tokenizer.
+        Initializes the TextClassifier by loading the model and tokenizer.
 
-        Args:
-            model_path (str): Path to the directory containing the saved model and tokenizer.
+        :param model_path: Path to the directory containing the saved model and tokenizer.
         """
+        # Determine if a GPU is available, otherwise use CPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Load the model and tokenizer
         self.model, self.tokenizer = self.load_model(model_path)
 
     def load_model(self, model_path: str) -> Tuple[BertForSequenceClassification, AutoTokenizer]:
         """
         Loads the saved model and tokenizer from the specified path.
 
-        Args:
-            model_path (str): Path to the directory containing the saved model and tokenizer.
-
-        Returns:
-            Tuple[BertForSequenceClassification, AutoTokenizer]: The model and tokenizer loaded from the specified path.
-
-        Raises:
-            FileNotFoundError: If the model path does not exist.
+        :param model_path: Path to the directory containing the saved model and tokenizer.
+        :returns: A tuple containing the model and tokenizer loaded from the specified path.
         """
+        # Check if the model path exists
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model path {model_path} does not exist.")
-        
+
+        # Load the pre-trained model and tokenizer
         model = BertForSequenceClassification.from_pretrained(model_path)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+        # Move the model to the appropriate device (GPU or CPU)
         model.to(self.device)
-        model.eval()
+        model.eval()  # Set the model to evaluation mode
+
         return model, tokenizer
 
     def classify_text(self, text: str) -> int:
         """
-        Classifies the text using the model.
+        Classifies the input text and returns the predicted class index.
 
-        Args:
-            text (str): The input text to classify.
-
-        Returns:
-            int: The predicted class index.
+        :param text: The input text to classify.
+        :returns: The predicted class index as an integer.
         """
+        # Preprocess the input text (e.g., cleaning, normalization)
         preprocessed_text = preprocess_text(text)
-        inputs = self.tokenizer(preprocessed_text, return_tensors="pt", padding="max_length", 
-                               truncation=True, max_length=128).to(self.device)
 
+        # Tokenize the preprocessed text and prepare it for the model
+        inputs = self.tokenizer(
+            preprocessed_text,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True,
+            max_length=128
+        ).to(self.device)
+
+        # Perform inference without calculating gradients
         with torch.no_grad():
             outputs = self.model(**inputs)
-            logits = outputs.logits
-            return torch.argmax(logits, dim=1).item()
+            logits = outputs.logits  # Extract logits from the model's output
+
+            # Get the index of the class with the highest score
+            predicted_class = torch.argmax(logits, dim=1).item()
+
+        return predicted_class
