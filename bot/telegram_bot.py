@@ -8,7 +8,8 @@ from telethon.tl.functions.channels import (
     # DeleteTopicHistoryRequest, 
     # GetForumTopicsByIDRequest
 )
-from bot.loader import config, telegram_config
+from bot.loader import config, telegram_config, classifier, text_similarity
+from bot.preprocess import preprocess_text
 
 
 class TelegramBot:
@@ -36,14 +37,47 @@ class TelegramBot:
 
     async def handler(self, event: NewMessage) -> None:
         """
-        Handles new incoming messages. If the message is from a channel, 
-        it will print the text of the message.
+        Handles new incoming messages.
 
         :param event: The event triggered by a new incoming message.
         :returns: None
         """
         if event.is_channel:
-            print(event.message.text)
+            post_text = event.message.text
+            clear_post_text = preprocess_text(post_text)
+            text_lemma = text_similarity.get_lemmas(clear_post_text)
+            
+            # TODO: Check posts similarity
+            if False:
+                return
+            
+            category = classifier.classify_text(clear_post_text)
+            topic_id = None
+            for topic in telegram_config.topics:
+                if topic["category"] == category:
+                    topic_id = topic["id"]
+                    print(topic_id)
+                    break
+            else:
+                return
+
+            forum_entity = await self.client.get_entity(-1002257213186) # TODO: fix this
+            print(event)
+            if event.message.media: # TODO: send only first media
+                await self.client.send_file(
+                    forum_entity,
+                    event.message.media,
+                    caption=event.message.text,
+                    parse_mode='markdown',
+                    reply_to=topic_id
+                )
+            else:
+                await self.client.send_message(
+                    forum_entity,
+                    event.message.text,
+                    parse_mode='markdown',
+                    reply_to=topic_id
+                )
 
     async def create_forum(self, forum_name: str, forum_about: str = "") -> int:
         """
