@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, List
 
+import asyncio
 from telethon import TelegramClient
 from telethon.events import NewMessage
 from telethon.tl.functions.channels import (
@@ -8,6 +9,8 @@ from telethon.tl.functions.channels import (
     # DeleteTopicHistoryRequest, 
     # GetForumTopicsByIDRequest
 )
+from telethon.tl.functions.messages import ForwardMessagesRequest
+from telethon.tl.types import InputPeerChannel, InputPeerChat
 from bot.loader import config, telegram_config, classifier, text_similarity
 from bot.preprocess import preprocess_text
 
@@ -35,6 +38,26 @@ class TelegramBot:
         # Create forum and topics if needed
         self.client.loop.run_until_complete(self.setup_forum_and_topics())
 
+    async def _get_grouped_message_ids(self, chat_id: int, grouped_id: int, timeout: float = 1.0) -> List[int]:
+        """
+        Retrieves message IDs that belong to the same group within a specific timeout period.
+
+        :param chat_id: The ID of the chat where messages are collected.
+        :param grouped_id: The grouped ID to filter messages.
+        :param timeout: Time in seconds to collect messages (default is 1.0).
+        :returns: A list of message IDs belonging to the group.
+        """
+        ids = []
+        end_time = asyncio.get_event_loop().time() + timeout
+
+        async for message in self.client.iter_messages(chat_id):
+            if message.grouped_id == grouped_id:
+                ids.append(message.id)
+            if asyncio.get_event_loop().time() > end_time:
+                break
+
+        return ids
+
     async def handler(self, event: NewMessage) -> None:
         """
         Handles new incoming messages.
@@ -42,49 +65,45 @@ class TelegramBot:
         :param event: The event triggered by a new incoming message.
         :returns: None
         """
-        if event.is_channel:
-            post_text = event.message.text
-            clear_post_text = preprocess_text(post_text)
-            text_lemma = text_similarity.get_lemmas(clear_post_text)
-            
-            # TODO: Check posts similarity
-            if False:
-                return
-            
-            category = classifier.classify_text(clear_post_text)
-            topic_id = None
-            for topic in telegram_config.topics:
-                if topic["category"] == category:
-                    topic_id = topic["id"]
-                    print(topic_id)
-                    break
-            else:
-                return
+        if not event.is_channel:
+            return
 
-            forum_entity = await self.client.get_entity(-1002257213186) # TODO: fix this
-            print(event)
-            if event.message.media: # TODO: send only first media
-                await self.client.send_file(
-                    forum_entity,
-                    event.message.media,
-                    caption=event.message.text,
-                    parse_mode='markdown',
-                    reply_to=topic_id
-                )
-            else:
-                await self.client.send_message(
-                    forum_entity,
-                    event.message.text,
-                    parse_mode='markdown',
-                    reply_to=topic_id
-                )
+        # Preprocess the post text
+        post_text = event.message.text
+        clear_post_text = preprocess_text(post_text)
+
+        # Extract lemmas for similarity check
+        text_lemma = self.text_similarity.get_lemmas(clear_post_text)
+
+        # TODO: Implement similarity check logic
+        if False:  # Replace with actual similarity check
+            return
+
+        # Classify the message text into a category
+        category = self.classifier.classify_text(clear_post_text)
+
+        # Find the corresponding topic ID for the category
+        topic_id = next((topic["id"] for topic in telegram_config.topics if topic["category"] == category), None)
+        if not topic_id:
+            return
+
+        # Collect grouped messages if applicable
+        message_ids = await self._get_grouped_message_ids(event.chat_id, event.message.grouped_id)
+
+        # Forward messages to the forum under the specific topic
+        await self.client(ForwardMessagesRequest(
+            from_peer=event.chat_id,
+            id=message_ids,
+            to_peer=telegram_config.forum_id,
+            top_msg_id=topic_id,
+        ))
 
     async def create_forum(self, forum_name: str, forum_about: str = "") -> None:
         """
-        Creates a new forum channel on Telegram and returns the forum ID.
+        Creates a new forum channel on Telegram.
 
         :param forum_name: The name of the forum.
-        :param forum_about: A description of the forum.
+        :param forum_about: A description of the forum (default is an empty string).
         :returns: None
         """
         forum = await self.client(CreateChannelRequest(
@@ -92,7 +111,11 @@ class TelegramBot:
             about=forum_about,
             forum=True
         ))
+
         forum_id = forum.updates[1].channel_id
+        if forum_id > 0:
+            forum_id = -100 * 10**10 - forum_id
+
         telegram_config.add_forum_id(forum_id)
 
     async def create_topic(self, topic_name: str, category: int) -> None:
