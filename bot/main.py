@@ -1,12 +1,7 @@
 from bot.telegram_bot import TelegramBot
-import logging
+from bot.logging_config import setup_logger
 
-# Configure the logging system
-logging.basicConfig(
-    level=logging.INFO, 
-    format="%(asctime)s [%(levelname)s] : %(name)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+setup_logger()
 
 bot = TelegramBot()
 bot.client.run_until_disconnected()

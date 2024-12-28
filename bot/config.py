@@ -3,6 +3,8 @@ import yaml
 import logging
 from typing import Dict, List
 
+# Setting up logging
+logger = logging.getLogger(__name__)
 
 class ConfigWorker:
     def __init__(self, config_path: str, create_empty: bool = False):
@@ -26,18 +28,18 @@ class ConfigWorker:
         if not os.path.exists(self.config_path) and self.create_empty:
             with open(self.config_path, 'w', encoding='utf-8'):
                 pass  # Create an empty file
-            logging.info(f"Created an empty config file at {self.config_path}")
+            logger.info(f"Created an empty config file at {self.config_path}")
 
         try:
             with open(self.config_path, 'r', encoding='utf-8') as file:
                 config = yaml.safe_load(file) or {}
-                logging.info(f"Configuration loaded from {self.config_path}")
+                logger.info(f"Configuration loaded from {self.config_path}")
                 return config
         except FileNotFoundError:
-            logging.error(f"Configuration file not found: {self.config_path}")
+            logger.error(f"Configuration file not found: {self.config_path}")
             raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
         except yaml.YAMLError as e:
-            logging.error(f"Error parsing YAML file: {e}")
+            logger.error(f"Error parsing YAML file: {e}")
             raise ValueError(f"Error parsing YAML file: {e}")
 
     def _save_config(self) -> None:
@@ -46,7 +48,7 @@ class ConfigWorker:
         """
         with open(self.config_path, 'w', encoding='utf-8') as file:
             yaml.safe_dump(self._config, file, default_flow_style=False, allow_unicode=True)
-            logging.info(f"Configuration saved to {self.config_path}")
+            logger.info(f"Configuration saved to {self.config_path}")
 
 
 class MainConfig(ConfigWorker):
@@ -104,7 +106,7 @@ class TelegramConfig(ConfigWorker):
         key = "topics"
         if key not in self._config:
             self._config[key] = []
-            logging.info("Added 'topics' key to configuration.")
+            logger.info("Added 'topics' key to configuration.")
 
     @property
     def topics(self) -> List:
@@ -139,7 +141,7 @@ class TelegramConfig(ConfigWorker):
             self._config['topics'].append({'id': topic_id, 'category': category})
             self._save_config()
             self._load_config()
-            logging.info(f"Topic with ID {topic_id} added to category {category}.")
+            logger.info(f"Topic with ID {topic_id} added to category {category}.")
 
     def add_forum_id(self, forum_id: int) -> None:
         """
@@ -150,4 +152,4 @@ class TelegramConfig(ConfigWorker):
         self._config['forum_id'] = forum_id
         self._save_config()
         self._load_config()
-        logging.info(f"Forum ID {forum_id} set in configuration.")
+        logger.info(f"Forum ID {forum_id} set in configuration.")

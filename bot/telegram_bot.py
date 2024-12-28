@@ -13,6 +13,8 @@ from telethon.tl.functions.messages import ForwardMessagesRequest
 from bot.loader import config, telegram_config, classifier, text_similarity
 from bot.preprocess import preprocess_text
 
+# Setting up logging
+logger = logging.getLogger(__name__)
 
 class TelegramBot:
     def __init__(self):
@@ -116,7 +118,7 @@ class TelegramBot:
         if forum_id > 0:
             forum_id = -100 * 10**10 - forum_id
 
-        logging.info(f"Forum created with ID: {forum_id}")
+        logger.info(f"Forum created with ID: {forum_id}")
 
         # Add the forum ID to the configuration
         telegram_config.add_forum_id(forum_id)
@@ -135,7 +137,7 @@ class TelegramBot:
         ))
 
         topic_id = topic.updates[0].id
-        logging.info(f"Topic created with ID: {topic_id}.")
+        logger.info(f"Topic created with ID: {topic_id}.")
 
         # Add the topic ID to the configuration under the appropriate category
         telegram_config.add_topic(topic_id, category)
@@ -147,7 +149,7 @@ class TelegramBot:
         :param topics: A dictionary with category IDs as keys and topic names as values.
         :returns: None
         """
-        logging.info("Creating topics for non-excluded categories.")
+        logger.info("Creating topics for non-excluded categories.")
 
         for category, topic_name in topics.items():
             if category not in config.exclude_categories:
@@ -160,11 +162,11 @@ class TelegramBot:
         :param topics: A dictionary with category IDs as keys and topic names as values.
         :returns: None
         """
-        logging.info(f"Creating new topics for categories that do not have topics.")
+        logger.info(f"Creating new topics for categories that do not have topics.")
         
         for category, topic_name in topics.items():
             if category not in config.exclude_categories and not any(category == data["category"] for data in telegram_config.topics):
-                logging.info(f"Creating new topic '{topic_name}' for category {category}.")
+                logger.info(f"Creating new topic '{topic_name}' for category {category}.")
                 await self.create_topic(topic_name, category)   
 
     async def setup_forum_and_topics(self) -> None:
@@ -173,18 +175,18 @@ class TelegramBot:
 
         :returns: None
         """
-        logging.info(f"Checking if forum and topics need to be created.")
+        logger.info(f"Checking if forum and topics need to be created.")
 
         # Create forum if it doesn't exist
         if telegram_config.forum_id is None:
-            logging.info("Forum does not exist, creating now.")
+            logger.info("Forum does not exist, creating now.")
             await self.create_forum("News")
 
         # Create topics if they don't exist
         if not telegram_config.topics:
-            logging.info("Topics do not exist, creating now.")
+            logger.info("Topics do not exist, creating now.")
             await self.create_topics(config.categories)
 
         # Create new topics if they don't exist
-        logging.info("Ensuring new topics are created if needed.")
+        logger.info("Ensuring new topics are created if needed.")
         await self.create_new_topics(config.categories)
