@@ -7,7 +7,7 @@ def setup_logger() -> None:
 
     :returns: None
     """
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logger = logging.getLogger()  # Get the root logger
     logger.setLevel(logging.INFO)  # Set the log level to INFO
 

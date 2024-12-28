@@ -9,7 +9,7 @@ def preprocess_text(text: str) -> str:
     :returns: The preprocessed text as a lowercase string with special characters and Markdown/HTML tags removed.
     """
 
-   # Remove HTML tags
+    # Remove HTML tags
     text = re.sub(r"<.*?>", "", text)
     
     # Remove bold Markdown syntax (e.g., **bold** or __bold__)
