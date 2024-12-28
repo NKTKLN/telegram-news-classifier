@@ -1,6 +1,6 @@
 import os
+import logging
 from typing import Tuple
-
 import torch
 from transformers import BertForSequenceClassification, AutoTokenizer
 from bot.preprocess import preprocess_text
@@ -15,7 +15,8 @@ class TextClassifier:
         """
         # Determine if a GPU is available, otherwise use CPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        logging.info(f"Using device: {self.device}")
+        
         # Load the model and tokenizer
         self.model, self.tokenizer = self._load_model(model_path)
 
@@ -28,15 +29,18 @@ class TextClassifier:
         """
         # Check if the model path exists
         if not os.path.exists(model_path):
+            logging.error(f"Model path {model_path} does not exist.")
             raise FileNotFoundError(f"Model path {model_path} does not exist.")
 
         # Load the pre-trained model and tokenizer
+        logging.info(f"Loading model and tokenizer from {model_path}")
         model = BertForSequenceClassification.from_pretrained(model_path)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
         # Move the model to the appropriate device (GPU or CPU)
         model.to(self.device)
         model.eval()  # Set the model to evaluation mode
+        logging.info("Model and tokenizer successfully loaded.")
 
         return model, tokenizer
 
@@ -47,8 +51,11 @@ class TextClassifier:
         :param text: The input text to classify.
         :returns: The predicted class index as an integer.
         """
+        logging.info(f"Classifying text: {text}")
+
         # Preprocess the input text (e.g., cleaning, normalization)
         preprocessed_text = preprocess_text(text)
+        logging.debug(f"Preprocessed text: {preprocessed_text}")
 
         # Tokenize the preprocessed text and prepare it for the model
         inputs = self.tokenizer(
@@ -67,4 +74,5 @@ class TextClassifier:
             # Get the index of the class with the highest score
             predicted_class = torch.argmax(logits, dim=1).item()
 
+        logging.info(f"Predicted class index: {predicted_class}")
         return predicted_class

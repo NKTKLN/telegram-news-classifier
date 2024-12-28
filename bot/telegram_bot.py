@@ -1,6 +1,6 @@
-from typing import Dict, List
-
+import logging
 import asyncio
+from typing import Dict, List
 from telethon import TelegramClient
 from telethon.events import NewMessage
 from telethon.tl.functions.channels import (
@@ -111,10 +111,14 @@ class TelegramBot:
             forum=True
         ))
 
+        # Extract forum ID and adjust if necessary
         forum_id = forum.updates[1].channel_id
         if forum_id > 0:
             forum_id = -100 * 10**10 - forum_id
 
+        logging.info(f"Forum created with ID: {forum_id}")
+
+        # Add the forum ID to the configuration
         telegram_config.add_forum_id(forum_id)
 
     async def create_topic(self, topic_name: str, category: int) -> None:
@@ -129,7 +133,12 @@ class TelegramBot:
             channel=telegram_config.forum_id,
             title=topic_name
         ))
-        telegram_config.add_topic(topic.updates[0].id, category)
+
+        topic_id = topic.updates[0].id
+        logging.info(f"Topic created with ID: {topic_id}.")
+
+        # Add the topic ID to the configuration under the appropriate category
+        telegram_config.add_topic(topic_id, category)
 
     async def create_topics(self, topics: Dict[int, str]) -> None:
         """
@@ -138,7 +147,8 @@ class TelegramBot:
         :param topics: A dictionary with category IDs as keys and topic names as values.
         :returns: None
         """
-        # Create topics for categories that are not excluded
+        logging.info("Creating topics for non-excluded categories.")
+
         for category, topic_name in topics.items():
             if category not in config.exclude_categories:
                 await self.create_topic(topic_name, category)
@@ -150,24 +160,31 @@ class TelegramBot:
         :param topics: A dictionary with category IDs as keys and topic names as values.
         :returns: None
         """
-        # Create new topics only for categories not present in the existing topics
+        logging.info(f"Creating new topics for categories that do not have topics.")
+        
         for category, topic_name in topics.items():
             if category not in config.exclude_categories and not any(category == data["category"] for data in telegram_config.topics):
+                logging.info(f"Creating new topic '{topic_name}' for category {category}.")
                 await self.create_topic(topic_name, category)   
 
     async def setup_forum_and_topics(self) -> None:
         """
-        Ensures the forum and topics are created if not already present.
+        Ensures the forum and topics are created if they are not already present.
 
         :returns: None
         """
+        logging.info(f"Checking if forum and topics need to be created.")
+
         # Create forum if it doesn't exist
         if telegram_config.forum_id is None:
+            logging.info("Forum does not exist, creating now.")
             await self.create_forum("News")
 
         # Create topics if they don't exist
         if not telegram_config.topics:
+            logging.info("Topics do not exist, creating now.")
             await self.create_topics(config.categories)
 
         # Create new topics if they don't exist
+        logging.info("Ensuring new topics are created if needed.")
         await self.create_new_topics(config.categories)
