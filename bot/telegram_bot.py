@@ -10,7 +10,6 @@ from telethon.tl.functions.channels import (
     # GetForumTopicsByIDRequest
 )
 from telethon.tl.functions.messages import ForwardMessagesRequest
-from telethon.tl.types import InputPeerChannel, InputPeerChat
 from bot.loader import config, telegram_config, classifier, text_similarity
 from bot.preprocess import preprocess_text
 
@@ -73,14 +72,14 @@ class TelegramBot:
         clear_post_text = preprocess_text(post_text)
 
         # Extract lemmas for similarity check
-        text_lemma = self.text_similarity.get_lemmas(clear_post_text)
+        text_lemma = text_similarity.get_lemmas(clear_post_text)
 
         # TODO: Implement similarity check logic
         if False:  # Replace with actual similarity check
             return
 
         # Classify the message text into a category
-        category = self.classifier.classify_text(clear_post_text)
+        category = classifier.classify_text(clear_post_text)
 
         # Find the corresponding topic ID for the category
         topic_id = next((topic["id"] for topic in telegram_config.topics if topic["category"] == category), None)
