@@ -63,6 +63,9 @@ class MessageHandler:
         :param limit: The maximum number of messages to retrieve (default is 100).
         :returns: A list of message IDs belonging to the group.
         """
+        if grouped_id is None:
+            return []
+
         ids = []
         end_time = asyncio.get_event_loop().time() + timeout
         async for message in self.client.iter_messages(chat_id, limit=limit):  # The limit is applied here
