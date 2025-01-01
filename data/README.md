@@ -120,9 +120,3 @@ README.md                      # This file
 ## 📃 License
 
 The dataset is distributed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](LICENCE.md).
-
-## 📞 Contact
-
-If you have any questions, please contact:
-
-**Telegram**: [@NKTKLN](https://t.me/NKTKLN)
