@@ -56,7 +56,7 @@ Using a virtual environment allows you to manage dependencies separately for eac
 You can install the required dependencies by running the following command:
 
 ```bash
-pip install -r requirements.txt
+pip install telethon
 ```
 
 ### Step 3: Obtain your `api_id` and `api_hash`
