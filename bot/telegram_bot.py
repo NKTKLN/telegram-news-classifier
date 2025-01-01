@@ -16,28 +16,40 @@ from bot.preprocess import preprocess_text
 # Setting up logging
 logger = logging.getLogger(__name__)
 
-class TelegramBot:
+class TelegramManager:
     def __init__(self):
         """
-        Initializes the TelegramBot instance by loading the configuration values
+        Initializes the TelegramManager instance by loading the configuration values
         and setting up the Telegram client with the API credentials.
         """
         # Load configuration values from the config file
         self.api_id = config.telegram.get("api_id")  # API ID for Telegram
         self.api_hash = config.telegram.get("api_hash")  # API hash for Telegram
         self.session_name = config.telegram.get("session_name")  # Session name for the Telegram client
-        
+
         # Initialize the TelegramClient with the session name, API ID, and API hash
         self.client = TelegramClient(self.session_name, self.api_id, self.api_hash)
 
-        # Add an event handler for new incoming messages
-        self.client.add_event_handler(self.handler, NewMessage())
+        # Initialize event handler and forum setup
+        self.message_handler = MessageHandler(self.client)
+        self.forum_setup = ForumSetup(self.client)
 
         # Start the client, which will begin processing events
         self.client.start()
-        
+
         # Create forum and topics if needed
-        self.client.loop.run_until_complete(self.setup_forum_and_topics())
+        asyncio.get_event_loop().run_until_complete(self.forum_setup.setup_forum_and_topics())
+        
+        # Keep the client running until it is disconnected
+        self.client.run_until_disconnected()
+
+class MessageHandler:
+    def __init__(self, client: TelegramClient):
+        """
+        Initialize the handler with the client.
+        """
+        self.client = client
+        self.client.add_event_handler(self.handler, NewMessage())
 
     async def _get_grouped_message_ids(self, chat_id: int, grouped_id: int, timeout: float = 1.0) -> List[int]:
         """
@@ -50,13 +62,11 @@ class TelegramBot:
         """
         ids = []
         end_time = asyncio.get_event_loop().time() + timeout
-
         async for message in self.client.iter_messages(chat_id):
             if message.grouped_id == grouped_id:
                 ids.append(message.id)
             if asyncio.get_event_loop().time() > end_time:
                 break
-
         return ids
 
     async def handler(self, event: NewMessage) -> None:
@@ -99,6 +109,10 @@ class TelegramBot:
             top_msg_id=topic_id,
         ))
 
+class ForumSetup:
+    def __init__(self, client: TelegramClient):
+        self.client = client
+
     async def create_forum(self, forum_name: str, forum_about: str = "") -> None:
         """
         Creates a new forum channel on Telegram.
@@ -112,14 +126,11 @@ class TelegramBot:
             about=forum_about,
             forum=True
         ))
-
         # Extract forum ID and adjust if necessary
         forum_id = forum.updates[1].channel_id
         if forum_id > 0:
             forum_id = -100 * 10**10 - forum_id
-
         logger.info(f"Forum created with ID: {forum_id}")
-
         # Add the forum ID to the configuration
         telegram_config.add_forum_id(forum_id)
 
@@ -135,10 +146,8 @@ class TelegramBot:
             channel=telegram_config.forum_id,
             title=topic_name
         ))
-
         topic_id = topic.updates[0].id
         logger.info(f"Topic created with ID: {topic_id}.")
-
         # Add the topic ID to the configuration under the appropriate category
         telegram_config.add_topic(topic_id, category)
 
@@ -150,7 +159,6 @@ class TelegramBot:
         :returns: None
         """
         logger.info("Creating topics for non-excluded categories.")
-
         for category, topic_name in topics.items():
             if category not in config.exclude_categories:
                 await self.create_topic(topic_name, category)
@@ -162,12 +170,11 @@ class TelegramBot:
         :param topics: A dictionary with category IDs as keys and topic names as values.
         :returns: None
         """
-        logger.info(f"Creating new topics for categories that do not have topics.")
-        
+        logger.info("Creating new topics for categories that do not have topics.")
         for category, topic_name in topics.items():
             if category not in config.exclude_categories and not any(category == data["category"] for data in telegram_config.topics):
                 logger.info(f"Creating new topic '{topic_name}' for category {category}.")
-                await self.create_topic(topic_name, category)   
+                await self.create_topic(topic_name, category)
 
     async def setup_forum_and_topics(self) -> None:
         """
@@ -175,8 +182,7 @@ class TelegramBot:
 
         :returns: None
         """
-        logger.info(f"Checking if forum and topics need to be created.")
-
+        logger.info("Checking if forum and topics need to be created.")
         # Create forum if it doesn't exist
         if telegram_config.forum_id is None:
             logger.info("Forum does not exist, creating now.")
