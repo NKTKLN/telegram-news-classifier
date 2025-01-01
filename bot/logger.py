@@ -1,5 +1,6 @@
 import logging
 
+
 def setup_logger() -> None:
     """
     Sets up the logger with a specific format and stream handler to display logs to the console.

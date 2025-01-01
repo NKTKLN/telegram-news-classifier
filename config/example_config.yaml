@@ -1,0 +1,32 @@
+telegram:
+  api_id: 1821196
+  api_hash: "your_api_hash_here"  # https://my.telegram.org/auth
+  phone_number: "+1234567890"
+  session_name: "my_user_bot"
+
+bot_settings:
+  model_path: "model"
+  db_path: "messages.db"
+
+# Optional: Uncomment to exclude categories or channels
+# exclude_categories:
+#   - 1
+#   - 2
+#
+# exclude_channels:
+#   - 1
+#   - 2
+
+categories:
+  0: "business"
+  1: "it"
+  2: "personal"
+  3: "other"
+  4: "weather"
+  5: "gaming"
+  6: "finances"
+  7: "stuff"
+  8: "political"
+  9: "advertisement"
+  10: "science"
+  11: "moscow"

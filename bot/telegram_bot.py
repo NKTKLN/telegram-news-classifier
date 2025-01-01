@@ -10,7 +10,7 @@ from telethon.tl.functions.channels import (
     # GetForumTopicsByIDRequest
 )
 from telethon.tl.functions.messages import ForwardMessagesRequest
-from bot.loader import config, telegram_config, classifier, text_similarity
+from bot.loader import config, telegram_config, classifier, text_similarity, db_handler
 from bot.preprocess import preprocess_text
 
 # Setting up logging
@@ -46,56 +46,73 @@ class TelegramManager:
 class MessageHandler:
     def __init__(self, client: TelegramClient):
         """
-        Initialize the handler with the client.
+        Initialize the handler with the Telegram client and set up event handler for new messages.
+        
+        :param client: The Telegram client instance.
         """
         self.client = client
         self.client.add_event_handler(self.handler, NewMessage())
 
-    async def _get_grouped_message_ids(self, chat_id: int, grouped_id: int, timeout: float = 1.0) -> List[int]:
+    async def _get_grouped_message_ids(self, chat_id: int, grouped_id: int, timeout: float = 1.0, limit: int = 100) -> List[int]:
         """
         Retrieves message IDs that belong to the same group within a specific timeout period.
-
+        
         :param chat_id: The ID of the chat where messages are collected.
         :param grouped_id: The grouped ID to filter messages.
         :param timeout: Time in seconds to collect messages (default is 1.0).
+        :param limit: The maximum number of messages to retrieve (default is 100).
         :returns: A list of message IDs belonging to the group.
         """
         ids = []
         end_time = asyncio.get_event_loop().time() + timeout
-        async for message in self.client.iter_messages(chat_id):
+        async for message in self.client.iter_messages(chat_id, limit=limit):  # The limit is applied here
             if message.grouped_id == grouped_id:
                 ids.append(message.id)
             if asyncio.get_event_loop().time() > end_time:
                 break
+        logger.info(f"Collected {len(ids)} messages with grouped ID {grouped_id}.")
         return ids
 
     async def handler(self, event: NewMessage) -> None:
         """
-        Handles new incoming messages.
-
+        Handles new incoming messages by processing, checking for similarity, and forwarding them.
+        
         :param event: The event triggered by a new incoming message.
         :returns: None
         """
-        if not event.is_channel:
+        # Skip messages that do not belong to a channel, messages from excluded channels or empty messages
+        if not event.is_channel or event.chat_id in config.exclude_channels or event.message.text == "":
             return
 
-        # Preprocess the post text
+        # Check if the message has already been processed
+        if db_handler.check_message_exists(event.message.id, event.chat_id, event.message.grouped_id):
+            logger.info(f"Message {event.message.id} already processed. Skipping.")
+            return
+
+        # Preprocess the post text and extract lemmas for similarity check
         post_text = event.message.text
         clear_post_text = preprocess_text(post_text)
-
-        # Extract lemmas for similarity check
         text_lemma = text_similarity.get_lemmas(clear_post_text)
+        
+        # Get recent lemmas from the database and check for similarity
+        lemma_list = db_handler.get_recent_messages_lemmas()
+        if text_similarity.is_similar_to_last_messages(text_lemma, lemma_list):
+            logger.info(f"Text is similar to recent messages. Skipping message {event.message.id}.")
+            return
+        
+        # Insert the message into the database
+        db_handler.insert_message(event.message.id, event.chat_id, event.message.grouped_id, clear_post_text, list(text_lemma), event.date)
 
-        # TODO: Implement similarity check logic
-        if False:  # Replace with actual similarity check
+        # Classify the message into a category
+        category = classifier.classify_text(clear_post_text)
+        if category in config.exclude_categories:
+            logger.info(f"Message belongs to excluded category {category}. Skipping.")
             return
 
-        # Classify the message text into a category
-        category = classifier.classify_text(clear_post_text)
-
-        # Find the corresponding topic ID for the category
+        # Find the topic ID for the category
         topic_id = next((topic["id"] for topic in telegram_config.topics if topic["category"] == category), None)
         if not topic_id:
+            logger.warning(f"No topic found for category {category}. Skipping forwarding.")
             return
 
         # Collect grouped messages if applicable
@@ -104,10 +121,12 @@ class MessageHandler:
         # Forward messages to the forum under the specific topic
         await self.client(ForwardMessagesRequest(
             from_peer=event.chat_id,
-            id=message_ids,
+            id=message_ids or [event.message.id],
             to_peer=telegram_config.forum_id,
             top_msg_id=topic_id,
         ))
+
+        logger.info(f"Successfully forwarded message {event.message.id} to the forum under topic {topic_id}.")
 
 class ForumSetup:
     def __init__(self, client: TelegramClient):

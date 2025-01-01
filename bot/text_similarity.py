@@ -1,6 +1,5 @@
 import spacy
 
-
 class TextSimilarity:
     def __init__(self, language_model='ru_core_news_sm'):
         """
@@ -37,3 +36,18 @@ class TextSimilarity:
 
         similarity = len(first_lemmas & second_lemmas) / len(first_lemmas | second_lemmas)
         return similarity > threshold
+
+    def is_similar_to_last_messages(self, current_lemma_set: set, previous_lemmas_list: list) -> bool:
+        """
+        Checks if the provided lemma set has a similarity greater than the threshold with any of the previous messages' lemmas.
+
+        :param current_lemma_set: The set of lemmatized tokens from the current text.
+        :param previous_lemmas_list: A list of lemmatized sets from previous messages.
+        :returns: True if the current lemma set is similar to any of the previous message lemmas, otherwise False.
+        """
+        # Iterate over each set of lemmas from the previous messages
+        for stored_lemma_set in previous_lemmas_list:
+            # Check if the similarity exceeds the threshold for any of the previous messages
+            if self.calculate_similarity(current_lemma_set, stored_lemma_set):
+                return True
+        return False

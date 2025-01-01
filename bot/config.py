@@ -54,11 +54,6 @@ class MainConfig(ConfigWorker):
         """Access the 'telegram' section of the configuration."""
         return self.config.get('telegram', {})
 
-    # @property
-    # def sqlite(self) -> Dict:
-    #     """Access the 'sqlite' section of the configuration."""
-    #     return self.config.get('sqlite', {})
-
     @property
     def bot_settings(self) -> Dict:
         """Access the 'bot_settings' section of the configuration."""
@@ -73,6 +68,11 @@ class MainConfig(ConfigWorker):
     def exclude_categories(self) -> List:
         """Access the 'exclude_categories' section of the configuration."""
         return self.config.get('exclude_categories', [])
+    
+    @property
+    def exclude_channels(self) -> List:
+        """Access the 'exclude_channels' section of the configuration."""
+        return self.config.get('exclude_channels', [])
 
 class TelegramConfig(ConfigWorker):
     @property
