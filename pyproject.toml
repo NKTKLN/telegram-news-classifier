@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "telegram-news-classifier"
+version = "1.1.0"
+description = "A bot for Telegram that analyzes and classifies news using a pre-trained RuBERT model, simplifying news management in Telegram channels."
+authors = ["NKTKLN <nktkln@nktkln.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bot"}]
+
+[tool.poetry.dependencies]
+python = ">=3.12.8,<3.13"
+aiogram = "^3.16.0"
+duckdb = "^1.1.3"
+torch = "^2.5.1"
+transformers = "^4.47.1"
+pyyaml = "^6.0.2"
+apscheduler = "^3.11.0"
+telethon = "^1.38.1"
+spacy = "^3.8.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

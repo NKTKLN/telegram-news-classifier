@@ -28,6 +28,7 @@ def main() -> None:
     # Setting up the database handler with the database file path from the configuration
     db_handler = DuckDBHandler(db_file=config.bot_settings.get("db_path"))
 
+    # Initialization of the deferred recurring task of clearing old messages from the database
     scheduler = BackgroundScheduler()
     scheduler.add_job(db_handler.cleanup_old_messages, 'interval', hours=2)
     scheduler.start()
