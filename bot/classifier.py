@@ -1,6 +1,6 @@
-import os
 import logging
 from typing import Tuple
+
 import torch
 from transformers import BertForSequenceClassification, AutoTokenizer
 
@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 class TextClassifier:
     def __init__(self, model_path: str):
         """
-        Initializes the TextClassifier by loading the model and tokenizer.
+        Initialize the TextClassifier by loading the model and tokenizer.
 
-        :param model_path: Path to the directory containing the saved model and tokenizer.
+        :param model_path: Path to the stored model and tokenizer.
         """
         # Determine if a GPU is available, otherwise use CPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -25,14 +25,9 @@ class TextClassifier:
         """
         Loads the saved model and tokenizer from the specified path.
 
-        :param model_path: Path to the directory containing the saved model and tokenizer.
-        :returns: A tuple containing the model and tokenizer loaded from the specified path.
+        :param model_path: Path to the stored model and tokenizer.
+        :returns: A tuple containing the loaded model and tokenizer.
         """
-        # Check if the model path exists
-        if not os.path.exists(model_path):
-            logger.error(f"Model path {model_path} does not exist.")
-            raise FileNotFoundError(f"Model path {model_path} does not exist.")
-
         # Load the pre-trained model and tokenizer
         logger.info(f"Loading model and tokenizer from {model_path}")
         model = BertForSequenceClassification.from_pretrained(model_path)
@@ -52,8 +47,6 @@ class TextClassifier:
         :param text: The input text to classify.
         :returns: The predicted class index as an integer.
         """
-        logger.info(f"Classifying text: {text}")
-
         # Tokenize the preprocessed text and prepare it for the model
         inputs = self.tokenizer(
             text,
@@ -71,5 +64,4 @@ class TextClassifier:
             # Get the index of the class with the highest score
             predicted_class = torch.argmax(logits, dim=1).item()
 
-        logger.info(f"Predicted class index: {predicted_class}")
         return predicted_class

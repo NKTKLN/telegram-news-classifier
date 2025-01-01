@@ -6,7 +6,8 @@ def preprocess_text(text: str) -> str:
     Preprocesses the input text and returns the cleaned text.
 
     :param text: The raw input text to preprocess.
-    :returns: The preprocessed text as a lowercase string with special characters and Markdown/HTML tags removed.
+    :returns: The preprocessed text as a lowercase string with special 
+              characters and Markdown/HTML tags removed.
     """
 
     # Remove HTML tags

@@ -1,7 +1,8 @@
 import os
-import yaml
 import logging
 from typing import Dict, List
+
+import yaml
 
 # Setting up logging
 logger = logging.getLogger(__name__)
@@ -23,30 +24,29 @@ class ConfigWorker:
     def _create_empty_file(self) -> None:
         """Create an empty config file if it doesn't exist."""
         if os.path.exists(self.file_path):
+            logger.info(f"Config file already exists at {self.file_path}")
             return
+        
         with open(self.file_path, 'w', encoding='utf-8'):
             pass  # Create an empty file
         logger.info(f"Created an empty config file at {self.file_path}")
 
     def load(self) -> None:
         """Load the configuration from the YAML file."""
-        try:
-            with open(self.file_path, 'r', encoding='utf-8') as file:
-                self.config = yaml.safe_load(file) or {}
-            logger.info(f"Configuration loaded from {self.file_path}")
-        except yaml.YAMLError as e:
-            logger.error(f"Error parsing YAML file: {e}")
-            raise ValueError(f"Error parsing YAML file: {e}")
+        with open(self.file_path, 'r', encoding='utf-8') as file:
+            self.config = yaml.safe_load(file) or {}
+        logger.info(f"Configuration loaded from {self.file_path}")
 
     def save(self) -> None:
         """Save the configuration to the YAML file."""
-        try:
-            with open(self.file_path, 'w', encoding='utf-8') as file:
-                yaml.safe_dump(self.config, file, default_flow_style=False, allow_unicode=True)
-            logger.info(f"Configuration saved to {self.file_path}")
-        except Exception as e:
-            logger.error(f"Failed to save configuration: {e}")
-            raise
+        with open(self.file_path, 'w', encoding='utf-8') as file:
+            yaml.safe_dump(
+                self.config, 
+                file, 
+                default_flow_style=False, 
+                allow_unicode=True
+            )
+        logger.info(f"Configuration saved to {self.file_path}")
 
 class MainConfig(ConfigWorker):
     @property
@@ -93,10 +93,13 @@ class TelegramConfig(ConfigWorker):
         :param category: Category ID associated with the topic.
         """
         topics = self.topics
-        if not any(topic['id'] == topic_id for topic in topics):
-            topics.append({'id': topic_id, 'category': category})
-            self.save()  # Save the updated config
-            logger.info(f"Topic with ID {topic_id} added to category {category}.")
+        if any(topic['id'] == topic_id for topic in topics):
+            logger.warning(f"Topic with ID {topic_id} already exists.")
+            return
+        
+        topics.append({'id': topic_id, 'category': category})
+        self.save()  # Save the updated config
+        logger.info(f"Topic with ID {topic_id} added to category {category}.")
 
     def add_forum_id(self, forum_id: int) -> None:
         """

@@ -1,8 +1,8 @@
-import json
-import duckdb
 import logging
 import datetime
 from typing import List, Set
+
+import duckdb
 
 # Setting up logging
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ class DuckDBHandler:
         """
         Initializes the DuckDB connection and creates the messages table.
 
-        :param db_file: Path to the database file. If not provided, an in-memory database is used by default.
+        :param db_file: Path to the database file. Default database is in-memory.
         """
         self.db = duckdb.connect(db_file)
         self.create_table()
@@ -32,16 +32,17 @@ class DuckDBHandler:
         ''')
         logger.info("Table 'messages' is ready.")
 
-    def insert_message(self, message_id: int, channel_id: int, grouped_id: int, text: str, lemma: List[str], date: datetime.datetime) -> None:
+    def insert_message(self, message_id: int, channel_id: int, grouped_id: int, 
+                       text: str, lemma: List[str], date: datetime.datetime) -> None:
         """
         Inserts a new message into the 'messages' table.
         
-        :param message_id: The unique identifier for the message.
-        :param channel_id: The ID of the channel where the message was posted.
+        :param message_id: Unique identifier for the message.
+        :param channel_id: Channel where the message was posted.
         :param grouped_id: Group identifier from messages
-        :param text: The text content of the message.
+        :param text: Text content of the message.
         :param lemma: A set of lemmatized tokens.
-        :param date: The timestamp when the message was posted.
+        :param date: Timestamp when the message was published
         """
         self.db.execute('''
         INSERT INTO messages (message_id, channel_id, grouped_id, text, lemma, date)
@@ -63,19 +64,23 @@ class DuckDBHandler:
 
     def get_recent_messages_lemmas(self, time_frame: int = 1) -> List[Set[str]]:
         """
-        Retrieves the lemmatized tokens from messages created within the last time frame (in hours).
+        Retrieves the lemmatized tokens from messages created within the last 
+        time frame (in hours).
         
-        :param time_frame: The number of hours to consider for message retrieval. Default is 1 hour.
+        :param time_frame: The number of hours to consider for message retrieval. 
+                           Default is 1 hour.
         :returns: A list of sets of lemmatized tokens from the recent messages.
         """
         time_threshold = datetime.datetime.now() - datetime.timedelta(hours=time_frame)
-        return map(lambda x: set(x[0]), self.db.execute('''
+        return [set(x[0]) for x in self.db.execute('''
         SELECT lemma FROM messages WHERE date >= ?
-        ''', (time_threshold,)).fetchall())
+        ''', (time_threshold,)).fetchall()]
     
-    def check_message_exists(self, message_id: int, channel_id: int, grouped_id: int) -> bool:
+    def check_message_exists(self, message_id: int, channel_id: int, 
+                             grouped_id: int) -> bool:
         """
-        Checks whether a message with the given message_id, channel_id, or grouped_id exists in the database.
+        Checks whether a message with the given message_id, channel_id, 
+        or grouped_id exists in the database.
         
         :param message_id: The unique ID of the message.
         :param channel_id: The ID of the channel where the message was posted.
@@ -83,16 +88,14 @@ class DuckDBHandler:
         :return: True if the message exists, False otherwise.
         """
         result = self.db.execute('''
-        SELECT COUNT(*) FROM messages WHERE channel_id = ? AND (message_id = ? OR grouped_id = ?)
+        SELECT COUNT(*) FROM messages WHERE channel_id = ? AND 
+        (message_id = ? OR grouped_id = ?)
         ''', (channel_id, message_id, grouped_id)).fetchone()
-
-        # If the count is greater than 0, it means the message exists
-        return result[0] > 0
-
+        return result[0] > 0 # True if message exists, False otherwise
 
     def close(self) -> None:
         """
         Closes the database connection.
         """
+        logger.info("Closing the database connection.")
         self.db.close()
-        logger.info("Database connection closed.")
