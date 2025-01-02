@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "telegram-news-classifier"
-version = "1.1.0"
+version = "1.0.2"
 description = "A bot for Telegram that analyzes and classifies news using a pre-trained RuBERT model, simplifying news management in Telegram channels."
 authors = ["NKTKLN <nktkln@nktkln.com>"]
 license = "MIT"

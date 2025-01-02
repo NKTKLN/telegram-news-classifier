@@ -4,12 +4,7 @@ from typing import Dict, List
 
 from telethon import TelegramClient
 from telethon.events import NewMessage
-from telethon.tl.functions.channels import (
-    CreateChannelRequest, 
-    CreateForumTopicRequest, 
-    # DeleteTopicHistoryRequest, 
-    # GetForumTopicsByIDRequest
-)
+from telethon.tl.functions.channels import CreateChannelRequest, CreateForumTopicRequest
 from telethon.tl.functions.messages import ForwardMessagesRequest
 
 from bot.db import DuckDBHandler
