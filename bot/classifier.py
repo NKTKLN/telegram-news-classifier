@@ -1,5 +1,4 @@
 import logging
-from typing import Tuple
 
 import torch
 from transformers import BertForSequenceClassification, AutoTokenizer
@@ -19,9 +18,9 @@ class TextClassifier:
         logger.info(f"Using device: {self.device}")
         
         # Load the model and tokenizer
-        self.model, self.tokenizer = self._load_model(model_path)
+        self._load_model(model_path)
 
-    def _load_model(self, model_path: str) -> Tuple[BertForSequenceClassification, AutoTokenizer]:
+    def _load_model(self, model_path: str) -> None:
         """
         Loads the saved model and tokenizer from the specified path.
 
@@ -30,15 +29,13 @@ class TextClassifier:
         """
         # Load the pre-trained model and tokenizer
         logger.info(f"Loading model and tokenizer from {model_path}")
-        model = BertForSequenceClassification.from_pretrained(model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = BertForSequenceClassification.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
 
         # Move the model to the appropriate device (GPU or CPU)
-        model.to(self.device)
-        model.eval()  # Set the model to evaluation mode
+        self.model.to(self.device)
+        self.model.eval()  # Set the model to evaluation mode
         logger.info("Model and tokenizer successfully loaded.")
-
-        return model, tokenizer
 
     def classify_text(self, text: str) -> int:
         """

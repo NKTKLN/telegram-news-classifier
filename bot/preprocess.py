@@ -37,7 +37,7 @@ def preprocess_text(text: str) -> str:
     # Remove blockquotes (e.g., > quoted text)
     text = re.sub(r">\s*", "", text)
     
-    # Remove all non-alphabetical characters and digits, allowing only Russian and English letters and spaces
+    # Remove all non-alphabetical characters and digits
     text = re.sub(r"[^a-zA-Zа-яА-ЯёЁ\s]", "", text)
     
     # Replace multiple spaces with a single space and strip leading/trailing spaces

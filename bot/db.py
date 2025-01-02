@@ -67,8 +67,7 @@ class DuckDBHandler:
         Retrieves the lemmatized tokens from messages created within the last 
         time frame (in hours).
         
-        :param time_frame: The number of hours to consider for message retrieval. 
-                           Default is 1 hour.
+        :param time_frame: The number of hours to consider for message retrieval. Default is 1 hour.
         :returns: A list of sets of lemmatized tokens from the recent messages.
         """
         time_threshold = datetime.datetime.now() - datetime.timedelta(hours=time_frame)
@@ -88,8 +87,7 @@ class DuckDBHandler:
         :return: True if the message exists, False otherwise.
         """
         result = self.db.execute('''
-        SELECT COUNT(*) FROM messages WHERE channel_id = ? AND 
-        (message_id = ? OR grouped_id = ?)
+        SELECT COUNT(*) FROM messages WHERE channel_id = ? AND (message_id = ? OR grouped_id = ?)
         ''', (channel_id, message_id, grouped_id)).fetchone()
         return result[0] > 0 # True if message exists, False otherwise
 

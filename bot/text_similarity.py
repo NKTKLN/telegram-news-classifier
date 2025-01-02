@@ -5,8 +5,7 @@ class TextSimilarity:
         """
         Initializes the TextSimilarity class with the specified language model.
         
-        :param language_model: The language model to be used by spaCy. 
-                               Default is 'ru_core_news_sm'.
+        :param language_model: The language model to be used by spaCy. Default is 'ru_core_news_sm'.
         """
         # Load the spaсy language model for NLP tasks
         self.nlp = spacy.load(language_model)

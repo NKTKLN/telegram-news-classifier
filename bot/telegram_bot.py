@@ -39,10 +39,10 @@ class TelegramManager:
         self.client = self._initialize_client()
         self.client.start()
         
-        # Set up message handling and forum management
+        # Set up forum management and message handling
+        self.forum_setup = ForumManager(self.client, config, telegram_config)
         self.message_handler = MessageHandler(self.client, config, 
                                               telegram_config, db_handler)
-        self.forum_setup = ForumManager(self.client, config, telegram_config)
 
         # Keep the client running until it is disconnected
         self.client.run_until_disconnected()
@@ -229,8 +229,7 @@ class ForumManager:
         """
         Creates topics for categories that are not excluded.
 
-        :param topics: A dictionary with category IDs as keys and 
-                       topic names as values.
+        :param topics: A dictionary with category IDs as keys and topic names as values.
         """
         logger.info("Creating topics for non-excluded categories.")
         for category, topic_name in topics.items():
@@ -241,8 +240,7 @@ class ForumManager:
         """
         Creates new topics for categories that do not have existing topics.
 
-        :param topics: A dictionary with category IDs as keys 
-                       and topic names as values.
+        :param topics: A dictionary with category IDs as keys and topic names as values.
         """
         logger.info("Creating new topics for categories that do not have topics.")
         for category, topic_name in topics.items():

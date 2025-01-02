@@ -98,7 +98,7 @@ class TelegramConfig(ConfigWorker):
             return
         
         topics.append({'id': topic_id, 'category': category})
-        self.save()  # Save the updated config
+        self.save()
         logger.info(f"Topic with ID {topic_id} added to category {category}.")
 
     def add_forum_id(self, forum_id: int) -> None:
@@ -108,5 +108,5 @@ class TelegramConfig(ConfigWorker):
         :param forum_id: Forum ID to set.
         """
         self.config['forum_id'] = forum_id
-        self.save()  # Save the updated config
+        self.save()
         logger.info(f"Forum ID {forum_id} set in configuration.")
