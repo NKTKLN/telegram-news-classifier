@@ -63,7 +63,7 @@ Alternatively, you can set up and run it manually using Python and Poetry:
 4. To run the bot, use:
 
    ```bash
-   poetry run python bot.py
+   poetry run python bot/main.py
    ```
 
 5. Don't forget to download the model from [this link](https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip).
