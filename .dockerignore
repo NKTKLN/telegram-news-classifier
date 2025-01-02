@@ -1,0 +1,30 @@
+# Ignore .gitignore, LICENSE, and README files (common documentation and config files)
+.gitignore
+LICENSE.md
+README.md
+
+# Ignore specific directories that aren't needed in the image
+utils/
+notebooks/
+data/
+
+# Ignore any Python-related cache files
+pycache/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment directory (if exists)
+.venv/
+.env/
+
+# Ignore any IDE or editor-specific files
+.idea/
+.vscode/
+
+# Ignore Docker-related files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Ignore log files
+*.log
