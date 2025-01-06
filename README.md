@@ -51,7 +51,7 @@ docker build -t telegram-news-classifier .
 If the session file (`news_classifier.session`) is missing, the bot will require you to log in. To do this, run the following command:
 
 ```bash
-docker run --it -v $(pwd):/app telegram-news-classifier --login
+docker run -i -t -v $(pwd):/app telegram-news-classifier --login
 ```
 
 This command will initiate the login process, and you will be prompted to enter your phone number and the authentication code from Telegram. After the first login, the session file will be saved and used for future runs.
@@ -61,7 +61,7 @@ This command will initiate the login process, and you will be prompted to enter 
 If the session file is already present (created after the first login), you can run the bot without the `--login` flag:
 
 ```bash
-docker run --it -v $(pwd):/app telegram-news-classifier
+docker run -v $(pwd):/app telegram-news-classifier -d
 ```
 
 Alternatively, if you're using `docker-compose`, you can run the bot with:
@@ -83,10 +83,16 @@ Alternatively, you can set up and run it manually using Python and Poetry:
    poetry install
    ```
 
+   Additionally, you will need to install the language model for spaCy:
+
+   ```bash
+   poetry run python -m spacy download ru_core_news_sm
+   ```
+
 5. To run the bot, use:
 
    ```bash
-   poetry run python bot/main.py
+   poetry run python -m bot.main
    ```
 
 ## ✅ ToDo
