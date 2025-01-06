@@ -18,13 +18,14 @@ logger = logging.getLogger(__name__)
 
 class TelegramManager:
     def __init__(self, config: MainConfig, telegram_config: TelegramConfig, 
-                 db_handler: DuckDBHandler):
+                 db_handler: DuckDBHandler, is_only_login: bool = False):
         """
         Initialize TelegramManager with config and Telegram client.
         
         :param config: Main configuration object with global settings.
         :param telegram_config: Telegram-specific configuration object.
         :param db_handler: Database handler for managing message storage and retrieval.
+        :param is_login_only: Flag indicating if only login is required (skips full startup).
         """
         self.config = config
         self.telegram_config = telegram_config
@@ -33,6 +34,9 @@ class TelegramManager:
         # Initialize and start the Telegram client
         self.client = self._initialize_client()
         self.client.start()
+
+        if is_only_login:
+            return
         
         # Set up forum management and message handling
         self.forum_setup = ForumManager(self.client, config, telegram_config)

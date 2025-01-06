@@ -1,4 +1,5 @@
 import logging
+import argparse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -11,10 +12,10 @@ from bot.config import MainConfig, TelegramConfig
 logger = logging.getLogger(__name__)
 
 def main() -> None:
-    # Setting up the logger to ensure proper logging throughout the bot's execution
+    # Set up the logger
     setup_logger()
 
-    # Configuring the main bot settings by loading configuration from the YAML file
+    # Load the configuration files
     try:
         config = MainConfig("config/config.yaml")
         telegram_config = TelegramConfig("config/bot_config.yaml", True)
@@ -25,16 +26,21 @@ def main() -> None:
         logger.error(f"An error occurred while loading config: {e}")
         return
 
-    # Setting up the database handler with the database file path from the configuration
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Telegram News Classifier")
+    parser.add_argument('--login', action='store_true', help="Authorization only, no full launch.")
+    args = parser.parse_args()
+
+    # Initialize the database handler with the path from the configuration
     db_handler = DuckDBHandler(db_file=config.bot_settings.get("db_path"))
 
-    # Initialization of the deferred recurring task of clearing old messages from the database
+    # Set up a recurring task to clean up old messages from the database
     scheduler = BackgroundScheduler()
     scheduler.add_job(db_handler.cleanup_old_messages, 'interval', hours=2)
     scheduler.start()
 
-    # Initializing the Telegram bot manager to start the bot and handle events
-    TelegramManager(config, telegram_config, db_handler)
+    # Initialize and start the Telegram bot manager
+    TelegramManager(config, telegram_config, db_handler, args.login)
 
 
 if __name__ == "__main__":

@@ -30,4 +30,5 @@ RUN mkdir -p /app/model && \
 COPY . .
 
 # Set the entry point
-CMD ["python", "bot/main.py"]
+ENTRYPOINT ["python", "-m", "bot.main"]
+CMD []

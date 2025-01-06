@@ -1,8 +1,7 @@
 telegram:
   api_id: 1821196
   api_hash: "your_api_hash_here"  # https://my.telegram.org/auth
-  phone_number: "+1234567890"
-  session_name: "my_user_bot"
+  session_name: "news_classifier"
 
 bot_settings:
   model_path: "model"
