@@ -20,10 +20,12 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false && \
     poetry install --no-root --no-interaction --no-ansi
 
+RUN python -m spacy download ru_core_news_sm
+
 # Download and extract the model
 RUN mkdir -p /app/model && \
     curl -L -o /app/model/model.zip https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip && \
-    unzip /app/model/model.zip -d /app/model && \
+    unzip /app/model/model.zip -d /app && \
     rm /app/model/model.zip
 
 # Copy the rest of the application files
