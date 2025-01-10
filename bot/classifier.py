@@ -1,3 +1,4 @@
+import os
 import logging
 
 import torch
@@ -27,6 +28,9 @@ class TextClassifier:
         :param model_path: Path to the stored model and tokenizer.
         :returns: A tuple containing the loaded model and tokenizer.
         """
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model path {model_path} does not exist.")
+
         # Load the pre-trained model and tokenizer
         logger.info(f"Loading model and tokenizer from {model_path}")
         self.model = BertForSequenceClassification.from_pretrained(model_path)
