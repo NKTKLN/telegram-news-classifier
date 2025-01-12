@@ -36,7 +36,7 @@ def main() -> None:
 
     # Set up a recurring task to clean up old messages from the database
     scheduler = BackgroundScheduler()
-    scheduler.add_job(db_handler.cleanup_old_messages, 'interval', hours=2)
+    scheduler.add_job(db_handler.cleanup_old_messages, 'interval', hours=config.bot_settings.get("message_lifetime"))
     scheduler.start()
 
     # Initialize and start the Telegram bot manager

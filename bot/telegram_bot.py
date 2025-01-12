@@ -73,6 +73,7 @@ class MessageHandler:
         self.config = config
         self.telegram_config = telegram_config
         self.db_handler = db_handler
+        self.message_lifetime = self.config.bot_settings.get("message_lifetime")
 
         # Initialize the text classifier with the model path specified in the bot settings
         self.classifier = TextClassifier(self.config.bot_settings.get("model_path"))
@@ -132,7 +133,7 @@ class MessageHandler:
         text_lemma = self.text_similarity.get_lemmas(clear_post_text)
         
         # Get recent lemmas from the database and check for similarity
-        lemma_list = self.db_handler.get_recent_messages_lemmas()
+        lemma_list = self.db_handler.get_recent_messages_lemmas(self.message_lifetime)
         if self.text_similarity.is_similar_to_last_messages(text_lemma, lemma_list):
             logger.info(f"Text is similar to recent messages. Skipping message {event.message.id}.")
             return

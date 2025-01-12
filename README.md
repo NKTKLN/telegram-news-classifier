@@ -17,6 +17,7 @@ telegram:
 bot_settings:
   model_path: "model"
   db_path: "messages.db"
+  message_lifetime: 2  # Time in hours
 
 # Optional: Uncomment to exclude categories or channels
 
@@ -35,6 +36,7 @@ bot_settings:
 2. Replace `your_api_hash_here` with your actual API hash.
 3. The `model_path` should point to the folder where the model is located (downloadable from [this link](https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip)).
 4. The `db_path` is the database where the bot stores the messages.
+5. The `message_lifetime` is the time in hours that messages are stored in the database to account for repeated messages.
 
 The `example_config.yaml` is just a template. Once you've filled it with your details, you can rename it to `config.yaml`.
 
