@@ -11,7 +11,7 @@ packages = [{include = "bot"}]
 python = ">=3.12.8,<3.13"
 aiogram = "^3.16.0"
 duckdb = "^1.1.3"
-torch = "^2.5.1"
+torch = "^2.6.0"
 transformers = "^4.48.0"
 pyyaml = "^6.0.2"
 apscheduler = "^3.11.0"
