@@ -19,6 +19,13 @@ dependencies = [
   "loguru>=0.7.3,<0.8.0",
 ]
 
+[dependency-groups]
+dev = [
+  "ruff>=0.15.1",
+  "mypy>=1.19.1",
+  "types-pyyaml>=6.0.12",
+]
+
 [build-system]
 requires = ["hatchling>=1.26.0"]
 build-backend = "hatchling.build"
@@ -43,4 +50,66 @@ exclude = [
   "**/__pycache__",
   "**/*.pyc",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+extend-include = ["*.ipynb"]
+exclude = [".git", ".claude", ".codex", "__pycache__", "build", "dist", ".venv", "tmp", "notebooks"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "D", "B", "B9", "C90", "S", "UP", "SIM", "TRY", "PL", "RUF", "ARG", "PTH"]
+# RUF001-003: the bot works on Russian text, so Cyrillic in strings, comments
+# and docstrings is the norm rather than a lookalike typo.
+# TRY003: the messages here name the offending path, which is the whole value
+# of the exception; a class per message would say less.
+ignore = ["E203", "D100", "RUF001", "RUF002", "RUF003", "TRY003"]
+fixable = ["ALL"]
+
+[tool.ruff.lint.pylint]
+# MessageHandler takes its six collaborators through the constructor; the
+# alternative is a service locator, which hides the same six.
+max-args = 6
+max-positional-args = 6
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"utils/**.py" = ["T201"]                  # print in the standalone exporter
+
+[tool.mypy]
+# The pydantic plugin teaches mypy that BaseSettings fields come from the
+# environment, so AppSettings() is a complete call with no arguments.
+plugins = ["pydantic.mypy"]
+mypy_path = ["src"]
+files = ["src", "utils"]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+show_error_codes = true
+pretty = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+disallow_untyped_calls = true
+exclude = [".git", ".claude", ".codex", "__pycache__", "build", "dist", ".venv", "tmp", "notebooks"]
+
+# Telethon, transformers, spaCy and APScheduler ship no type information, so
+# every value crossing their boundary is Any; disallow_any_unimported is left
+# off for that reason rather than because strictness is unwanted.
+[[tool.mypy.overrides]]
+module = ["telethon.*", "transformers.*", "spacy.*", "apscheduler.*"]
+ignore_missing_imports = true
 
