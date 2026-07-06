@@ -1,0 +1,155 @@
+version: '3'
+
+tasks:
+  # ======== Environment ========
+  sync:
+    desc: Sync dependencies (dev group) using uv
+    cmds:
+      - uv sync --all-groups
+
+  sync-frozen:
+    desc: Sync dependencies using locked versions
+    cmds:
+      - uv sync --frozen --all-groups
+
+  spacy-model:
+    desc: Download the spaCy pipeline used for lemmatization
+    cmds:
+      - uv run python -m spacy download ru_core_news_sm
+
+  init:
+    desc: Full project setup
+    cmds:
+      - task: sync
+      - task: spacy-model
+      - task: precommit
+
+  # ======== Pre-commit ========
+  precommit:
+    desc: Install git hooks
+    cmds:
+      - uv run pre-commit install --install-hooks
+
+  precommit-run:
+    desc: Run pre-commit on all files
+    cmds:
+      - uv run pre-commit run --all-files
+
+  # ======== Commitizen ========
+  cz-commit:
+    desc: Commit using Conventional Commits
+    cmds:
+      - uv run cz commit
+
+  cz-check:
+    desc: Check commit messages
+    cmds:
+      - uv run cz check
+
+  # ======== Formatting ========
+  fmt:
+    desc: Auto-fix lint issues and format code
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check . --fix
+
+  fmt-unsafe:
+    desc: Auto-fix lint issues using unsafe fixes and format code
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check . --fix --unsafe-fixes
+
+  fmt-check:
+    desc: Check code formatting
+    cmds:
+      - uv run ruff format --check .
+
+  # ======== Static analysis ========
+  ruff:
+    desc: Run Ruff lint
+    cmds:
+      - uv run ruff check .
+
+  typecheck:
+    desc: Run MyPy
+    cmds:
+      - uv run mypy .
+
+  lint:
+    desc: Run Ruff and MyPy
+    cmds:
+      - task: ruff
+      - task: fmt-check
+      - task: typecheck
+
+  # ======== Dependency hygiene ========
+  audit:
+    desc: Security audit
+    cmds:
+      - uv run pip-audit
+
+  unused-libs:
+    desc: Detect unused dependencies
+    cmds:
+      - uv run deptry .
+
+  # ======== Full quality gate ========
+  check:
+    desc: Run full quality checks
+    cmds:
+      - task: lint
+      - task: build
+      - task: audit
+      - task: unused-libs
+
+  ci:
+    desc: Run CI checks locally
+    cmds:
+      - task: lint
+      - task: build
+
+  ci-frozen:
+    desc: Run CI checks with locked dependencies
+    cmds:
+      - task: sync-frozen
+      - task: lint
+      - task: build
+
+  # ======== Run app ========
+  run:
+    desc: Run the bot
+    cmds:
+      - uv run python -m news_classifier.main
+
+  login:
+    desc: Authorize the Telegram session and exit
+    cmds:
+      - uv run python -m news_classifier.main --login
+
+  # ======== Build ========
+  build:
+    desc: Build package (wheel + sdist)
+    cmds:
+      - uv build
+
+  # ======== Docker ========
+  docker-build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t telegram-news-classifier .
+
+  docker-login:
+    desc: Authorize the Telegram session inside the container
+    cmds:
+      - docker compose run --rm bot --login
+
+  docker-run:
+    desc: Run the bot with Docker Compose
+    cmds:
+      - docker compose up -d
+
+  docker:
+    desc: Build and run Docker
+    cmds:
+      - task: docker-build
+      - task: docker-run
