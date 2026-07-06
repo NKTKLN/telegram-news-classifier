@@ -24,6 +24,8 @@ dev = [
   "ruff>=0.15.1",
   "mypy>=1.19.1",
   "pre-commit>=4.5.1",
+  "pip-audit>=2.10.0",
+  "deptry>=0.24.0",
   "commitizen>=4.13.7",
   "types-pyyaml>=6.0.12",
 ]
@@ -114,6 +116,10 @@ exclude = [".git", ".claude", ".codex", "__pycache__", "build", "dist", ".venv",
 [[tool.mypy.overrides]]
 module = ["telethon.*", "transformers.*", "spacy.*", "apscheduler.*"]
 ignore_missing_imports = true
+
+[tool.deptry]
+known_first_party = ["news_classifier"]
+extend_exclude = ["\\.claude", "\\.codex", "notebooks", "utils"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
