@@ -1,122 +1,76 @@
-# Telegram Message Exporter
+# 📤 Telegram Message Exporter
 
-## 🗒 Description
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Telethon](https://img.shields.io/badge/Telethon-user%20account-26A5E4?logo=telegram&logoColor=white)](https://docs.telethon.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE.md)
 
-This script allows you to fetch and export messages from multiple Telegram channels to individual JSON files. The messages are saved along with important details such as the message ID, sender ID, text content, date, and the channel name.
+**Telegram Message Exporter** walks every channel your Telegram account follows
+and writes their posts to one JSON file per channel under `data/raw/`. It is the
+script the [dataset](../data/README.md) behind the classifier was collected
+with, and the one to run again when the model needs more data.
 
-The script uses the [Telethon](https://github.com/LonamiWebs/Telethon) library to interact with Telegram's API.
+It is a collection tool, not part of the bot: nothing in `src/` imports it, and
+it is excluded from the dependency check. What it shares with the bot is the
+credentials — the same `API_ID` and `API_HASH` from `.env` — because both sign
+in as your user account, which is the only kind of session that can read the
+channels you subscribe to.
 
-## 💾 Prerequisites
+## 📦 Dependencies
 
-Before running this script, you need to have the following:
+The script needs `telethon` and `loguru`, both already in the project's
+dependencies, so the project environment is enough:
 
-1. **Python**: Python 3.7 or higher is required.
-2. **Telethon**: The script uses the Telethon library to connect to Telegram's API.
-
-You also need to generate your **`api_id`** and **`api_hash`** from the Telegram Developer site.
-
-## ⚙️ Setup
-
-### Step 1: Create a Virtual Environment (optional but recommended)
-
-Using a virtual environment allows you to manage dependencies separately for each project.
-
-1. **Create a virtual environment**:
-
-   If you're using **Windows**:
-
-   ```bash
-   python -m venv venv
-   ```
-
-   For **Linux/macOS**:
-
-   ```bash
-   python3 -m venv venv
-   ```
-
-2. **Activate the virtual environment**:
-
-   - On **Windows**:
-
-     ```bash
-     .\venv\Scripts\activate
-     ```
-
-   - On **Linux/macOS**:
-
-     ```bash
-     source venv/bin/activate
-     ```
-
-   After activating the virtual environment, your terminal prompt should change to indicate that you're inside the `venv` environment.
-
-### Step 2: Install Python dependencies
-
-You can install the required dependencies by running the following command:
-
-```bash
-pip install telethon
+```sh
+task sync
 ```
 
-### Step 3: Obtain your `api_id` and `api_hash`
+## 🚀 Running
 
-To use the Telegram API, you need to create a Telegram application to obtain the `api_id` and `api_hash`.
+Set `API_ID` and `API_HASH` in `.env` — see the
+[main README](../README.md#-configuration) — then run the script from the
+project root:
 
-1. Go to [Telegram's Developer Page](https://my.telegram.org/auth).
-2. Log in with your Telegram account.
-3. Create a new application and note down your `api_id` and `api_hash`.
-
-### Step 4: Update the script with your credentials
-
-In the script, replace the following placeholders with your actual credentials:
-
-```python
-api_id = 'your_api_id'  # Replace with your actual API ID
-api_hash = 'your_api_hash'  # Replace with your actual API Hash
+```sh
+uv run python utils/telegram_message_exporter.py
 ```
 
-### Step 5: Configure the message limit (optional)
+The first run signs in interactively and stores
+`telegram_message_exporter.session`, a session of its own so that a long export
+never interferes with the running bot.
 
-You can modify the `LIMIT` variable in the script to control how many messages to fetch from each channel. By default, the script fetches the last 3000 messages:
+## 🔧 What it does
 
-```python
-LIMIT = 3000  # Change this value to set a different limit
-```
+| Setting | Value | Where |
+| --- | --- | --- |
+| Posts per channel | 3000, newest first | `MESSAGE_LIMIT` |
+| Output directory | `data/raw/`, created if missing | `OUTPUT_DIR` |
+| File name | `{abs(channel_id)}_messages.json` | `save_messages` |
+| Session | `telegram_message_exporter` | `SESSION_NAME` |
 
-### Step 6: Run the script
+Posts without text are skipped, and a channel whose file already exists has the
+new posts prepended to the old ones rather than replacing them — so running the
+export twice grows the file instead of truncating it, and duplicates are the
+caller's problem to deduplicate on `message_id`.
 
-Once you have set up everything, you can run the script as follows:
-
-```bash
-python telegram_message_exporter.py
-```
-
-The script will start fetching messages from all available channels and save them into individual JSON files. Each file will be named after the channel ID, e.g., `123456789_messages.json`.
-
-## Example JSON Format
-
-Each JSON file will have the following format:
+## 📝 Output format
 
 ```json
 [
     {
-        "message_id": 123456789,
-        "sender_id": 987654321,
-        "text": "This is a sample message",
-        "date": "2024-12-17T10:00:00",
-        "channel": "Sample Channel"
-    },
-    {
-        "message_id": 123456790,
-        "sender_id": 987654322,
-        "text": "Another sample message",
-        "date": "2024-12-17T10:05:00",
-        "channel": "Sample Channel"
+        "message_id": 11655,
+        "sender_id": -1001000724666,
+        "text": "Post text",
+        "date": "2024-11-07T18:09:50+00:00",
+        "channel": "Naked Science"
     }
 ]
 ```
 
-## 📃 License
+`date` is ISO 8601 as Telegram delivers it, in UTC. The category field the
+dataset carries is not written here: it is added later by the classification
+notebooks in [`notebooks/`](../notebooks).
 
-This project is licensed under the MIT License, see [LICENSE.md](/LICENSE.md) for full text.
+## 📜 License
+
+This project is licensed under the MIT License. See
+[LICENSE.md](../LICENSE.md) for the full text.

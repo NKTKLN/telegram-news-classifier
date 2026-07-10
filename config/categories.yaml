@@ -1,0 +1,26 @@
+# Category index -> topic name. The indices are the classes the model predicts,
+# so they may only be renamed, never renumbered.
+categories:
+  0: "business"
+  1: "it"
+  2: "personal"
+  3: "other"
+  4: "weather"
+  5: "gaming"
+  6: "finances"
+  7: "stuff"
+  8: "political"
+  9: "advertisement"
+  10: "science"
+  11: "moscow"
+
+# Categories that get no topic and are dropped instead of forwarded.
+exclude_categories:
+  - 2
+  - 3
+  - 5
+  - 7
+  - 9
+
+# Channel IDs whose posts are ignored entirely.
+exclude_channels: []
