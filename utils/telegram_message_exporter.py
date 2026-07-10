@@ -1,95 +1,94 @@
-import os
+"""Export the posts of every channel an account follows into JSON files.
+
+Standalone script: it shares the Telegram credentials with the bot through the
+same `.env` variables, but nothing in the package imports it.
+"""
+
+import asyncio
 import json
-import logging
-from typing import List, Dict
+import os
+from pathlib import Path
+from typing import Any
 
-from telethon.tl.types import Message
-from telethon.sync import TelegramClient
+from loguru import logger
+from telethon import TelegramClient
 from telethon.tl.custom.dialog import Dialog
+from telethon.tl.types import Message
 
-# Replace with your API ID and API Hash
-API_ID = 'your_api_id'  # Replace with your actual API ID
-API_HASH = 'your_api_hash'  # Replace with your actual API Hash
-
-# Logging configuration
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Constants
-OUTPUT_FILE_TEMPLATE = "{}_messages.json"
-MESSAGE_LIMIT = 3000  # Default message limit
+OUTPUT_DIR = Path("data/raw")
+MESSAGE_LIMIT = 3000
+SESSION_NAME = "telegram_message_exporter"
 
 
-async def fetch_channel_messages(client: TelegramClient, channel: Dialog) -> List[Dict]:
+async def fetch_channel_messages(
+    client: TelegramClient, channel: Dialog
+) -> list[dict[str, Any]]:
+    """Read the most recent posts of one channel.
+
+    Args:
+        client: Authorized Telethon client.
+        channel: Dialog to read from.
+
+    Returns:
+        list[dict[str, Any]]: One record per post that carries text.
     """
-    Fetch messages from a specific Telegram channel.
-
-    :param client: Instance of the Telegram client.
-    :param channel: The channel from which to fetch messages.
-    :returns: A list of dictionaries containing message details.
-    """
-    logger.info(f"Fetching the last {MESSAGE_LIMIT} messages from channel: {channel.name}")
-    messages = []
-
-    async for message in client.iter_messages(channel.id, limit=MESSAGE_LIMIT):
-        if isinstance(message, Message) and message.text:
-            messages.append({
-                'message_id': message.id,
-                'sender_id': message.sender_id,
-                'text': message.text,
-                'date': message.date.isoformat(),
-                'channel': channel.name
-            })
-
-    logger.info(f"Fetched {len(messages)} messages from channel: {channel.name}")
+    logger.info(f"Fetching up to {MESSAGE_LIMIT} messages from {channel.name}.")
+    messages = [
+        {
+            "message_id": message.id,
+            "sender_id": message.sender_id,
+            "text": message.text,
+            "date": message.date.isoformat(),
+            "channel": channel.name,
+        }
+        async for message in client.iter_messages(channel.id, limit=MESSAGE_LIMIT)
+        if isinstance(message, Message) and message.text
+    ]
+    logger.info(f"Fetched {len(messages)} messages from {channel.name}.")
     return messages
 
 
-def save_messages_to_file(messages: List[Dict], channel_id: int) -> None:
-    """
-    Save messages to a JSON file.
+def save_messages(messages: list[dict[str, Any]], channel_id: int) -> None:
+    """Append the posts of one channel to its JSON file.
 
-    :param messages: List of message dictionaries to save.
-    :param channel_id: ID of the channel (used for file naming).
+    Args:
+        messages: Records returned by `fetch_channel_messages`.
+        channel_id: Channel the records came from; names the file.
     """
     if not messages:
-        logger.warning("No messages to save.")
+        logger.warning(f"Nothing to save for channel {channel_id}.")
         return
 
-    file_path = OUTPUT_FILE_TEMPLATE.format(abs(channel_id))
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    path = OUTPUT_DIR / f"{abs(channel_id)}_messages.json"
+    if path.exists():
+        with path.open(encoding="utf-8") as file:
+            messages.extend(json.load(file))
 
-    # Load existing messages if the file exists
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            existing_messages = json.load(file)
-        messages.extend(existing_messages)
-
-    # Save all messages to the file
-    with open(file_path, 'w', encoding='utf-8') as file:
+    with path.open("w", encoding="utf-8") as file:
         json.dump(messages, file, ensure_ascii=False, indent=4)
+    logger.info(f"Saved {len(messages)} messages to {path}.")
 
-    logger.info(f"Messages saved to {file_path}")
 
+async def export_all_channels(client: TelegramClient) -> None:
+    """Export every channel the account follows.
 
-async def process_channels(client: TelegramClient) -> None:
-    """
-    Process all channels the user has access to and fetch messages.
-
-    :param client: Instance of the Telegram client.
+    Args:
+        client: Telethon client; started by this function.
     """
     await client.start()
-    channels = [dialog for dialog in await client.get_dialogs() if dialog.is_channel]
-
-    for channel in channels:
-        logger.info(f"Processing channel: {channel.name}")
-        messages = await fetch_channel_messages(client, channel)
-        save_messages_to_file(messages, channel.id)
+    for dialog in await client.get_dialogs():
+        if dialog.is_channel:
+            save_messages(await fetch_channel_messages(client, dialog), dialog.id)
 
 
 def main() -> None:
-    client = TelegramClient('telegram_message_exporter', API_ID, API_HASH)
-    client.loop.run_until_complete(process_channels(client))
+    """Run the export against the credentials in the environment."""
+    client = TelegramClient(
+        SESSION_NAME, int(os.environ["API_ID"]), os.environ["API_HASH"]
+    )
+    asyncio.run(export_all_channels(client))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
