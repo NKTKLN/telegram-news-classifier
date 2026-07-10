@@ -1,9 +1,13 @@
 services:
-  app:
+  bot:
     build:
       context: .
       dockerfile: Dockerfile
+    image: telegram-news-classifier
+    env_file: .env
     volumes:
-      - .:/app
-    environment:
-      - PYTHONUNBUFFERED=1
+      - ./config:/app/config
+      - ./state:/state
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
