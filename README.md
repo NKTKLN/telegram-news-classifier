@@ -1,107 +1,173 @@
 # 📣 Telegram News Classifier
 
-## 🗒 Description
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-RuBERT-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Telethon](https://img.shields.io/badge/Telethon-user%20account-26A5E4?logo=telegram&logoColor=white)](https://docs.telethon.dev/)
+[![spaCy](https://img.shields.io/badge/spaCy-ru__core__news__sm-09A3D5?logo=spacy&logoColor=white)](https://spacy.io/models/ru)
+[![DuckDB](https://img.shields.io/badge/DuckDB-message%20store-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/)
+[![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Task](https://img.shields.io/badge/Task-runner-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
+[![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
+[![Ruff](https://img.shields.io/badge/linting-ruff-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+[![Checked with mypy](https://img.shields.io/badge/mypy-checked-2A6DB2.svg)](https://mypy-lang.org/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-FAB040?logo=pre-commit&logoColor=black)](https://pre-commit.com/)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE.md)
 
-At some point, I realized that most of the posts from the Telegram channels I subscribed to were not informative and lacked value for me. Therefore, I decided to create a bot that sorts out ads and categorizes all the news and posts from the channels I follow.
+**Telegram News Classifier** reads every channel your own Telegram account is
+subscribed to, classifies each post with a fine-tuned RuBERT model, and forwards
+it into the topic of a forum supergroup that the bot creates for that category.
+Ads and the categories you do not care about are dropped instead of forwarded.
 
-## ⚙️ Bot Configuration
+The design follows from what a subscription feed actually looks like: the same
+story arrives from five channels within the hour, and a good part of the rest is
+advertising. So a post is not classified before it has been compared against
+everything seen recently — the text is stripped of markup, lemmatized with
+spaCy, and measured against the lemmas of the last few hours by Jaccard
+similarity. Only what survives that filter reaches the model, and only what the
+model does not put in an excluded category reaches the forum.
 
-The configuration file can be found in the `config/example_config.yaml` file. Here's an example of what it should look like:
+## 📦 Dependencies
+
+* [Python 3.13+](https://www.python.org/downloads/) — the floor in
+  `pyproject.toml`, pinned for `uv` in `.python-version`
+* [uv](https://docs.astral.sh/uv/getting-started/installation/) — environment
+  and lock file
+* [Task](https://taskfile.dev/) — every command below is a task
+* [Docker](https://docs.docker.com/get-docker/) — only for the container build
+* A Telegram **API ID** and **API hash** from
+  [my.telegram.org](https://my.telegram.org/auth) — the bot signs in as your
+  user account, not as a bot account, because only a user sees the channels you
+  subscribe to
+* The fine-tuned model from
+  [files.nktkln.com](https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip)
+
+Everything else, `torch` and `spacy` included, is installed by `task init`.
+
+## 🚀 Running
+
+Install the dependencies, download the spaCy pipeline and install the git hooks:
+
+```sh
+task init
+```
+
+Unpack the classifier model into `model/` next to `pyproject.toml`:
+
+```sh
+curl -L -o model.zip "https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip" && unzip -j model.zip -d model && rm model.zip
+```
+
+Copy the settings template and fill in your API ID and hash:
+
+```sh
+cp .env.example .env
+```
+
+Sign in once. Telethon asks for your phone number and the code Telegram sends
+you, then writes `news_classifier.session`, which every later run reuses:
+
+```sh
+task login
+```
+
+Start the bot:
+
+```sh
+task run
+```
+
+On the first start it creates the forum supergroup and one topic per category,
+and records their IDs in `config/forum_state.yaml`. Delete that file and the
+next start creates a fresh forum.
+
+## 🔧 Configuration
+
+Credentials and paths live in `.env`, read by `pydantic-settings`; `.env.example`
+lists all of them with their defaults.
+
+| Variable | Default | What it is |
+| --- | --- | --- |
+| `API_ID`, `API_HASH` | — | Telegram credentials; required |
+| `SESSION_NAME` | `news_classifier` | Telethon session file, without the extension |
+| `MODEL_PATH` | `model` | Directory with the model and its tokenizer |
+| `DB_PATH` | `messages.db` | DuckDB file of recently seen posts |
+| `TAXONOMY_PATH` | `config/categories.yaml` | Category names and exclusions |
+| `FORUM_STATE_PATH` | `config/forum_state.yaml` | Forum and topic IDs; written by the bot |
+| `FORUM_TITLE` | `News` | Title of the forum created on the first run |
+| `MESSAGE_LIFETIME` | `2` | Hours a post stays a duplicate candidate |
+| `SIMILARITY_THRESHOLD` | `0.1` | Jaccard score above which two posts are the same news |
+| `SPACY_MODEL` | `ru_core_news_sm` | Pipeline used for lemmatization |
+| `DISABLE_LOGGING`, `LOG_LEVEL`, `LOG_PATH` | `false`, `INFO`, empty | Loguru sinks; without `LOG_PATH` logs go to stdout only |
+
+The taxonomy is a structure rather than a knob, so it stays in YAML:
 
 ```yaml
-telegram:
-  api_id: 1821196
-  api_hash: "your_api_hash_here"  # https://my.telegram.org/auth
-  session_name: "news_classifier"
-
-bot_settings:
-  model_path: "model"
-  db_path: "messages.db"
-  message_lifetime: 2  # Time in hours
-
-# Optional: Uncomment to exclude categories or channels
-
-# exclude_categories:
-#   - 1
-#   - 2
-
-# exclude_channels:
-#   - 1
-#   - 2
+categories:
+  0: "business"
+  1: "it"
+  # ...
+exclude_categories:
+  - 9  # advertisement
+exclude_channels: []
 ```
 
-### How to set it up:
+The keys under `categories` are the class indices the model predicts. Rename
+them freely — the names only become topic titles — but never renumber them, and
+never add one: a twelfth index is a category the model cannot output.
+`exclude_categories` drops a class without retraining and gives it no topic;
+`exclude_channels` takes whole channels out, by the negative `-100…` chat ID
+Telegram uses for supergroups and channels.
 
-1. Obtain your **API ID** and **API Hash** by logging into [Telegram's Developer Portal](https://my.telegram.org/auth).
-2. Replace `your_api_hash_here` with your actual API hash.
-3. The `model_path` should point to the folder where the model is located (downloadable from [this link](https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip)).
-4. The `db_path` is the database where the bot stores the messages.
-5. The `message_lifetime` is the time in hours that messages are stored in the database to account for repeated messages.
+`config/forum_state.yaml` is state, not configuration. The bot writes it, it is
+git-ignored, and it is the only thing standing between a restart and a second
+forum being created.
 
-The `example_config.yaml` is just a template. Once you've filled it with your details, you can rename it to `config.yaml`.
+> [!IMPORTANT]
+> `MESSAGE_LIFETIME` sets both how long posts are kept and how often they are
+> deleted, so it decides how far back the duplicate filter can see. Raising it
+> catches slower repeats at the cost of comparing against more lemma sets.
 
-## 🐳 Run in Docker
+## 🧰 Tasks
 
-You can run the bot using Docker. Simply execute:
+`Taskfile.yml` is the interface to the project; `task --list` prints them all.
 
-```bash
-docker build -t telegram-news-classifier .
+| Task | Does |
+| --- | --- |
+| `task init` | Sync dependencies, download the spaCy pipeline, install the git hooks |
+| `task login` | Authorize the Telegram session and exit |
+| `task run` | Run the bot |
+| `task fmt` | `ruff format`, then `ruff check --fix` |
+| `task lint` | `ruff check`, format check, `mypy` |
+| `task audit` | `pip-audit` against the installed set |
+| `task unused-libs` | `deptry` — declared but unused, and undeclared imports |
+| `task build` | `uv build` — wheel and sdist |
+| `task check` | The full gate: lint, build, audit, unused-libs |
+| `task ci` | What a pipeline runs: lint, build |
+| `task docker` | Build the image and start the container |
+| `task docker-login` | Sign in interactively inside the container |
+
+## 🐳 Docker
+
+```sh
+task docker-build
+task docker-login   # first run only, asks for the code Telegram sends you
+task docker-run
 ```
 
-### If No Session Exists
+The build is two-stage: the builder resolves from `uv.lock` with
+`--frozen --no-dev` into `/opt/venv`, downloads the spaCy pipeline and unpacks
+the classifier model into `/opt/model`; the final stage copies those into a
+fresh `python:3.13-slim` and runs as `shrimp`, a non-root user with a fixed UID
+and GID of `10000`.
 
-If the session file (`news_classifier.session`) is missing, the bot will require you to log in. To do this, run the following command:
+The model lives at `/opt/model` rather than in the working directory on purpose:
+`compose.yml` mounts `./config` and `./state` into the container, and anything
+mounted over `/app` would hide a model that is already in the image. Everything
+the bot writes — the session file and the message database — goes to `/state`,
+so the image itself stays read-only in practice.
 
-```bash
-docker run -i -t -v $(pwd):/app telegram-news-classifier --login
-```
+## 📜 License
 
-This command will initiate the login process, and you will be prompted to enter your phone number and the authentication code from Telegram. After the first login, the session file will be saved and used for future runs.
-
-### Running the Bot (After Session Exists)
-
-If the session file is already present (created after the first login), you can run the bot without the `--login` flag:
-
-```bash
-docker run -v $(pwd):/app telegram-news-classifier -d
-```
-
-Alternatively, if you're using `docker-compose`, you can run the bot with:
-
-```bash
-docker-compose up --build -d
-```
-
-## 🔧 Manual Run
-
-Alternatively, you can set up and run it manually using Python and Poetry:
-
-1. Install Poetry if you haven't already: [Poetry installation guide](https://python-poetry.org/docs/#installation).
-2. Clone the repository and navigate to the project folder.
-3. Download the model from [this link](https://files.nktkln.com/Projects/Telegram%20News%20Classifier/model/model.zip).
-4. Install the dependencies by running:
-
-   ```bash
-   poetry install
-   ```
-
-   Additionally, you will need to install the language model for spaCy:
-
-   ```bash
-   poetry run python -m spacy download ru_core_news_sm
-   ```
-
-5. To run the bot, use:
-
-   ```bash
-   poetry run python -m bot.main
-   ```
-
-## ✅ ToDo
-
-- [ ] Add a "merge" news function (combine news from different sources into the most detailed version).
-- [ ] Add deletion of topics if changes have been made to the config.
-
-## 📃 License
-
-This project is licensed under the MIT License. See [LICENSE.md](/LICENSE.md) for the full text.
+This project is licensed under the MIT License. See
+[LICENSE.md](./LICENSE.md) for the full text.
