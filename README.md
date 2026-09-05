@@ -14,18 +14,59 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE.md)
 
-**Telegram News Classifier** reads every channel your own Telegram account is
-subscribed to, classifies each post with a fine-tuned RuBERT model, and forwards
-it into the topic of a forum supergroup that the bot creates for that category.
-Ads and the categories you do not care about are dropped instead of forwarded.
+**English** · [Русский](./README.ru.md)
 
-The design follows from what a subscription feed actually looks like: the same
-story arrives from five channels within the hour, and a good part of the rest is
-advertising. So a post is not classified before it has been compared against
-everything seen recently — the text is stripped of markup, lemmatized with
-spaCy, and measured against the lemmas of the last few hours by Jaccard
-similarity. Only what survives that filter reaches the model, and only what the
-model does not put in an excluded category reaches the forum.
+This project explores automatic topic classification for Russian-language
+Telegram posts. Its practical goal is to reduce information overload: instead
+of reading every channel in a feed, a user can filter posts by the topics they
+actually care about.
+
+The repository materials cover the whole ML workflow — collecting and labeling
+Telegram posts, exploring and cleaning the data, comparing classification
+approaches, and fine-tuning RuBERT.
+
+## 🎯 Project goal
+
+Build a model that assigns a Telegram post to a thematic category based on its
+text. The classifier is intended to become the core of a personalized news
+filter for Telegram.
+
+The current labels are: politics, personal posts, IT, business, Moscow, science,
+finance, miscellaneous content, gaming, advertising, and weather. The source
+dataset also contains an `other` label, which is removed before training.
+
+## 📊 Dataset
+
+`all_channel_posts.csv` contains 22,099 posts collected from 24 Telegram
+channels between August 2023 and December 2024.
+
+| Column | Description |
+| --- | --- |
+| `message_id` | Telegram message identifier |
+| `sender_id` | Source identifier |
+| `text` | Original post text |
+| `date` | Publication timestamp |
+| `channel` | Channel name |
+| `category` | Manually assigned topic |
+
+The dataset has no missing values. EDA found 772 duplicated texts and a clear
+class imbalance: politics is the largest category with 4,631 posts, while
+weather has 406. Because of this imbalance, stratified splitting and metrics
+beyond plain accuracy are important.
+
+## 🧹 Text preparation
+
+The preprocessing pipeline:
+
+- converts text to lowercase;
+- removes links, hashtags, mentions, HTML/Markdown and special characters;
+- lemmatizes Russian words with spaCy;
+- removes Russian stop words and common channel boilerplate;
+- removes duplicate texts and posts labeled `other`.
+
+The EDA also studies post length, frequent words and n-grams, publication time,
+category balance, TF-IDF features, sentence embeddings, and low-dimensional
+projections with t-SNE and UMAP.
 
 ## 📦 Dependencies
 
@@ -128,6 +169,29 @@ forum being created.
 > deleted, so it decides how far back the duplicate filter can see. Raising it
 > catches slower repeats at the cost of comparing against more lemma sets.
 
+## 🧠 How a post is handled
+
+Every new message from a channel goes through the same sequence, and each step
+can end it:
+
+| Step | Drops the post when |
+| --- | --- |
+| Source check | It is not a channel post, has no text, or the channel is in `exclude_channels` |
+| Database lookup | Its ID, or the ID of its album, is already stored |
+| Duplicate filter | Its lemmas overlap a post from the last `MESSAGE_LIFETIME` hours above `SIMILARITY_THRESHOLD` |
+| Classifier | The predicted category is in `exclude_categories` |
+| Topic lookup | No topic exists for that category yet |
+
+What is left is forwarded into the topic for its category. Albums are forwarded
+whole: the first message of an album waits a second for its siblings to arrive,
+so a set of photos does not turn into one photo.
+
+The filter runs on the cleaned text, not the original. `preprocess_text` strips
+HTML and Markdown, then everything that is not a Latin or Cyrillic letter, which
+is also the form the model was trained on — the same function feeds both the
+duplicate check and the classifier, so they can never disagree about what a post
+says.
+
 ## 🧰 Tasks
 
 `Taskfile.yml` is the interface to the project; `task --list` prints them all.
@@ -146,6 +210,11 @@ forum being created.
 | `task ci` | What a pipeline runs: lint, build |
 | `task docker` | Build the image and start the container |
 | `task docker-login` | Sign in interactively inside the container |
+
+`task audit` currently reports advisories against `transformers`, and every
+fix for them is in the 5.x line. The pin stays at `<5.0.0` because the model
+in this repository was fine-tuned and only ever run against 4.x — moving the
+major version is a change to validate against the model, not a lock file edit.
 
 ## 🐳 Docker
 
@@ -166,6 +235,34 @@ The model lives at `/opt/model` rather than in the working directory on purpose:
 mounted over `/app` would hide a model that is already in the image. Everything
 the bot writes — the session file and the message database — goes to `/state`,
 so the image itself stays read-only in practice.
+
+## 📁 Source layout
+
+```
+src/news_classifier/
+  settings/       AppSettings; the .env contract
+  domain/         Post, Taxonomy, ForumState — plain pydantic models
+  storage/        DuckDB message store, YAML taxonomy and forum state
+  services/       preprocessing, duplicate detection, the classifier
+  telegram/       client wiring, forum setup, the message handler
+  main.py         entry point; task run calls it as python -m news_classifier.main
+config/           categories.yaml (tracked), forum_state.yaml (written by the bot)
+utils/            standalone channel exporter, used to build the dataset
+notebooks/        training and analysis, see below
+data/             the dataset the model was trained on
+```
+
+The dataset of classified Telegram posts and the notebooks that produced the
+model are documented separately: [`data/README.md`](data/README.md) and
+[`utils/README.md`](utils/README.md).
+
+## ✅ ToDo
+
+- [ ] Add a "merge" news function (combine news from different sources into the
+      most detailed version).
+- [ ] Delete topics when the taxonomy changes.
+- [ ] Rewrite the duplicate-news comparison and keep the older posts in a
+      vector database.
 
 ## 📜 License
 
