@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-  "telethon>=1.38.1,<2.0.0",
+  "telethon>=1.45.0,<2.0.0",
   "torch>=2.6.0,<3.0.0",
   "transformers>=4.48.0,<5.0.0",
   "spacy>=3.8.3,<4.0.0",
