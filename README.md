@@ -83,7 +83,7 @@ On the held-out test set of 2,210 posts:
 | Metric | Value |
 | --- | --- |
 | Accuracy | 0.781 |
-| Macro F1 | 0.77 |
+| Macro F1 | 0.7693 |
 | Weighted F1 | 0.78 |
 | Macro ROC-AUC | 0.967 |
 
@@ -125,9 +125,9 @@ stratified folds, same 12 classes, same text cleaning:
 | --- | --- | --- | --- |
 | TF-IDF + LogisticRegression | 0.733 ± 0.006 | 0.736 | 0.714 |
 | TF-IDF + LinearSVC | 0.733 ± 0.004 | 0.734 | 0.707 |
-| **RuBERT, fine-tuned** | **0.777** | **0.781** | **0.77** |
+| **RuBERT, fine-tuned** | **0.777** | **0.781** | **0.769** |
 
-Fine-tuning buys about 4.5 points of accuracy and 5.6 points of macro F1 over
+Fine-tuning buys about 4.5 points of accuracy and 5.5 points of macro F1 over
 logistic regression. Most of it comes from the classes where keywords run out —
 `other` goes 0.55 → 0.63 F1 and `business` 0.62 → 0.70 — while `political` is
 nearly a tie at 0.89 → 0.92, its vocabulary being unmistakable to either model.
