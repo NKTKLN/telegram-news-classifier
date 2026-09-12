@@ -2,6 +2,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-RuBERT-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Test accuracy](https://img.shields.io/badge/test%20accuracy-0.781-2A6DB2)](./notebooks/model.ipynb)
+[![Macro F1](https://img.shields.io/badge/macro%20F1-0.77-2A6DB2)](./notebooks/model.ipynb)
 [![Telethon](https://img.shields.io/badge/Telethon-user%20account-26A5E4?logo=telegram&logoColor=white)](https://docs.telethon.dev/)
 [![spaCy](https://img.shields.io/badge/spaCy-ru__core__news__sm-09A3D5?logo=spacy&logoColor=white)](https://spacy.io/models/ru)
 [![DuckDB](https://img.shields.io/badge/DuckDB-message%20store-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/)
@@ -33,7 +35,9 @@ filter for Telegram.
 
 The current labels are: politics, personal posts, IT, business, Moscow, science,
 finance, miscellaneous content, gaming, advertising, and weather. The source
-dataset also contains an `other` label, which is removed before training.
+dataset also carries an `other` label, and all twelve labels are trained on —
+the bot drops `personal` and `other` when forwarding instead, through
+`exclude_categories`.
 
 ## 📊 Dataset
 
@@ -67,6 +71,67 @@ The preprocessing pipeline:
 The EDA also studies post length, frequent words and n-grams, publication time,
 category balance, TF-IDF features, sentence embeddings, and low-dimensional
 projections with t-SNE and UMAP.
+
+## 📈 Results
+
+The classifier is `DeepPavlov/rubert-base-cased` fine-tuned over 12 classes —
+5 epochs, batch size 8, learning rate 5e-5, sequences truncated to 128 tokens,
+the checkpoint picked by 5-fold stratified cross-validation.
+
+On the held-out test set of 2,210 posts:
+
+| Metric | Value |
+| --- | --- |
+| Accuracy | 0.781 |
+| Macro F1 | 0.77 |
+| Weighted F1 | 0.78 |
+| Macro ROC-AUC | 0.967 |
+
+Cross-validation accuracy stayed in a narrow band across the five folds —
+0.7788, 0.7725, 0.7753, 0.7758, 0.7843 — for a mean of 0.777, so the test
+figure is not a lucky split.
+
+Per category, sorted by F1:
+
+| Category | Precision | Recall | F1 | Support |
+| --- | --- | --- | --- | --- |
+| `political` | 0.92 | 0.92 | **0.92** | 463 |
+| `science` | 0.88 | 0.89 | **0.88** | 128 |
+| `it` | 0.83 | 0.86 | **0.84** | 241 |
+| `weather` | 0.84 | 0.78 | **0.81** | 40 |
+| `gaming` | 0.76 | 0.81 | **0.79** | 52 |
+| `moscow` | 0.75 | 0.84 | **0.79** | 192 |
+| `finances` | 0.81 | 0.76 | **0.78** | 114 |
+| `personal` | 0.77 | 0.70 | **0.73** | 339 |
+| `advertisement` | 0.80 | 0.64 | **0.71** | 44 |
+| `business` | 0.74 | 0.67 | **0.70** | 203 |
+| `stuff` | 0.61 | 0.69 | **0.65** | 61 |
+| `other` | 0.61 | 0.66 | **0.63** | 333 |
+
+The spread is the interesting part. `political` and `science` have vocabulary of
+their own and land above 0.88, while the two catch-all classes — `other` and
+`stuff` — sit at the bottom, which is what a catch-all class does: it has no
+vocabulary of its own, only the absence of everyone else's. `advertisement` has
+the sharpest precision/recall split (0.80 vs 0.64), so roughly a third of ads
+still slip through as something else.
+
+### Why a transformer
+
+The EDA compares RuBERT against a TF-IDF + LightGBM baseline on a balanced
+subsample — 200 posts per class over 11 classes, split 80/20 into 1,760 train
+and 440 validation rows, both models given the publication hour as an extra
+feature:
+
+| Model | Accuracy | Macro F1 |
+| --- | --- | --- |
+| TF-IDF + LightGBM | 0.58 | 0.57 |
+| RuBERT, 3 epochs | 0.76 | 0.76 |
+
+An 18-point accuracy gap on identical data is what justifies the cost of
+fine-tuning and of shipping `torch` to every deployment. Numbers in this section
+come from [`notebooks/model.ipynb`](notebooks/model.ipynb) and
+[`notebooks/eda.ipynb`](notebooks/eda.ipynb) and are reported as the saved cell
+outputs show them.
 
 ## 📦 Dependencies
 
@@ -211,10 +276,9 @@ says.
 | `task docker` | Build the image and start the container |
 | `task docker-login` | Sign in interactively inside the container |
 
-`task audit` currently reports advisories against `transformers`, and every
-fix for them is in the 5.x line. The pin stays at `<5.0.0` because the model
-in this repository was fine-tuned and only ever run against 4.x — moving the
-major version is a change to validate against the model, not a lock file edit.
+The `transformers` pin stays at `<5.0.0` because the model in this repository
+was fine-tuned and only ever run against 4.x — moving the major version is a
+change to validate against the model, not a lock file edit.
 
 ## 🐳 Docker
 
