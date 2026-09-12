@@ -117,21 +117,30 @@ still slip through as something else.
 
 ### Why a transformer
 
-The EDA compares RuBERT against a TF-IDF + LightGBM baseline on a balanced
-subsample — 200 posts per class over 11 classes, split 80/20 into 1,760 train
-and 440 validation rows, both models given the publication hour as an extra
-feature:
+The obvious question is what a cheap linear model scores on the same data, so
+the EDA evaluates two on exactly this split — same `train_test_split`, same five
+stratified folds, same 12 classes, same text cleaning:
 
-| Model | Accuracy | Macro F1 |
-| --- | --- | --- |
-| TF-IDF + LightGBM | 0.58 | 0.57 |
-| RuBERT, 3 epochs | 0.76 | 0.76 |
+| Model | CV accuracy | Test accuracy | Test macro F1 |
+| --- | --- | --- | --- |
+| TF-IDF + LogisticRegression | 0.733 ± 0.006 | 0.736 | 0.714 |
+| TF-IDF + LinearSVC | 0.733 ± 0.004 | 0.734 | 0.707 |
+| **RuBERT, fine-tuned** | **0.777** | **0.781** | **0.77** |
 
-An 18-point accuracy gap on identical data is what justifies the cost of
-fine-tuning and of shipping `torch` to every deployment. Numbers in this section
-come from [`notebooks/model.ipynb`](notebooks/model.ipynb) and
-[`notebooks/eda.ipynb`](notebooks/eda.ipynb) and are reported as the saved cell
-outputs show them.
+Fine-tuning buys about 4.5 points of accuracy and 5.6 points of macro F1 over
+logistic regression. Most of it comes from the classes where keywords run out —
+`other` goes 0.55 → 0.63 F1 and `business` 0.62 → 0.70 — while `political` is
+nearly a tie at 0.89 → 0.92, its vocabulary being unmistakable to either model.
+The two linear baselines are indistinguishable from each other, which is what
+usually happens once the TF-IDF features are fixed.
+
+The baselines are untuned and run without lemmatization, so read 4.5 points as
+the upper end of what the transformer is worth here — enough to justify shipping
+`torch`, not enough to call a linear model hopeless.
+
+All numbers come from [`notebooks/model.ipynb`](notebooks/model.ipynb) and
+[`notebooks/eda.ipynb`](notebooks/eda.ipynb), as the saved cell outputs show
+them.
 
 ## 📦 Dependencies
 
